@@ -379,6 +379,11 @@ static int readCartridge(void *dest,const char *name,unsigned limit) {
 //---------------------------------------------------------------------------------
 bool loadGame(const char *gameName) {
 	if (gameName) {
+        char extension[8];getFileExtension(extension,gameName);
+        const char *basename=strrchr(gameName,'/');basename=basename?basename+1:gameName;
+        if(strcmp(extension,".zip") && strlen(basename)>=sizeof(loadedFilename)) {
+            infoOutput("ROM filename too long; current game kept.");return true;
+        }
         if(!persistBeforeChange())return true;
 		cls(0);
 		if (isConsoleRunning()) {
@@ -416,10 +421,13 @@ bool loadGame(const char *gameName) {
 			setEmuSpeed(0);
 			loadCart(emuFlags);
 			gameInserted = true;
-            const char *base=strrchr(currentFilename,'/');
-            strlcpy(loadedFilename,base?base+1:currentFilename,sizeof(loadedFilename));
-            loadedROMPath[0]=0;
             char ext[8];getFileExtension(ext,gameName);
+            /* Raw argv paths can exceed currentFilename's basename buffer.
+             * ZIP saves still use the inner cartridge name supplied by loadROM. */
+            const char *identity=strcmp(ext,".zip")?gameName:currentFilename;
+            const char *base=strrchr(identity,'/');
+            strlcpy(loadedFilename,base?base+1:identity,sizeof(loadedFilename));
+            loadedROMPath[0]=0;
             if(strcmp(ext,".zip")) {
                 if(gameName[0]=='/'||strchr(gameName,':'))strlcpy(loadedROMPath,gameName,sizeof(loadedROMPath));
                 else {char dir[FILEPATH_MAX_LENGTH];if(getcwd(dir,sizeof(dir)))snprintf(loadedROMPath,sizeof(loadedROMPath),"%s%s%s",dir,strcmp(dir,"/")?"/":"",gameName);}
