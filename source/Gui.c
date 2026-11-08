@@ -27,6 +27,8 @@ static void uiLanguageSet(void);
 static void debugStepFrame(void);
 static const char *getUiLanguageText(void);
 static const char *getBufferModeText(void);
+static void aboutControls(void);
+static void aboutComponents(void);
 static void gammaChange(void);
 static void paletteChange(void);
 static const char *getPaletteText(void);
@@ -122,13 +124,10 @@ const MItem quitItems[] = {
 	{"No ", backOutOfMenu},
 };
 
-extern char gameInfoString[32];
 static const char *aboutVersion(void) { return EMUVERSION; }
 static const char *aboutAuthor(void) { return "FluBBaOfWard"; }
-static const char *aboutGame(void) {
-	if (!gameInserted) return "No game loaded";
-	updateGameInfo();
-	return gameInfoString + 11;
+static const char *aboutMaintainer(void) {
+	return gUiLanguage == UI_LANGUAGE_ZH_CN ? "千岚之夏" : "Blueteemo";
 }
 static const char *aboutA(void) { return "NGP A"; }
 static const char *aboutB(void) { return "NGP B"; }
@@ -144,13 +143,19 @@ static const char *aboutFont(void) { return "Fusion Pixel 12px"; }
 const MItem aboutItems[] = {
 	{"NGPDS", uiDummy, aboutVersion},
 	{"Original Author", uiDummy, aboutAuthor},
-	{"Game", uiDummy, aboutGame},
+	{"Fork Maintainer", uiDummy, aboutMaintainer},
+	{"Button Guide", aboutControls},
+	{"Components & Font", aboutComponents},
+};
+const MItem aboutControlItems[] = {
 	{"B Button", uiDummy, aboutA},
 	{"A Button", uiDummy, aboutB},
 	{"L Button", uiDummy, aboutD},
 	{"X / Start", uiDummy, aboutOption},
 	{"Y / Select", uiDummy, aboutPower},
 	{"D-Pad", uiDummy, aboutPad},
+};
+const MItem aboutComponentItems[] = {
 	{"ARMZ80", uiDummy, aboutZ80},
 	{"TLCS-900H", uiDummy, aboutCpu},
 	{"K2GE", uiDummy, aboutGpu},
@@ -169,11 +174,22 @@ const Menu menu7 = MENU_M("Settings", uiAuto, setItems);
 const Menu menu8 = MENU_M("Debug", uiAuto, debugItems);
 const Menu menu9 = MENU_M("Quit Emulator?", uiAuto, quitItems);
 const Menu menu10 = MENU_M("", uiDummy, dummyItems);
+const Menu menu11 = MENU_M("Button Guide", uiAuto, aboutControlItems);
+const Menu menu12 = MENU_M("Components & Font", uiAuto, aboutComponentItems);
 
-const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6, &menu7, &menu8, &menu9, &menu10 };
+const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6, &menu7, &menu8, &menu9, &menu10, &menu11, &menu12 };
+
+static void aboutControls(void) { enterMenu(11); }
+static void aboutComponents(void) { enterMenu(12); }
+
+bool hasConsoleProgram(void) {
+	/* A BIOS for the other machine cannot run the active HLE console. */
+	return gameInserted || (gMachine == HW_NGPMONO ?
+		g_BIOSBASE_BNW != NULL : g_BIOSBASE_COLOR != NULL);
+}
 
 static void debugStepFrame(void) {
-	if (!gameInserted && !g_BIOSBASE_BNW && !g_BIOSBASE_COLOR) {
+	if (!hasConsoleProgram()) {
 		infoOutput("Load a game first.");
 		return;
 	}

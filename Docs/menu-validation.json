@@ -1,13 +1,13 @@
 {
   "date": "2026-11-09",
-  "baseline": "465dcf8303a3cd625bc79e3669401316dc5aeaee",
-  "nds_sha256": "916aa320a695058269dfb62466cbdf7421f0629dfa1e5de2879a0bccda2e943f",
-  "nds_bytes": 907264,
+  "baseline": "8a0dca610862085cb8cbc5aa4efa9b4d9d64ee32",
+  "nds_sha256": "7761bcf730206e73d7c845a70b3af80729ecddc1945f4e7dfabff1c97b6688ba",
+  "nds_bytes": 908288,
   "clean_rebuild_sha256_matches": true,
   "host_ui_asan_ubsan": "PASS",
   "host_config": "PASS",
-  "host_persistence_asan_ubsan": "PASS: 60 load and 72 save schedules",
-  "host_legacy_asan_ubsan": "PASS: legacy empty files and 192 ranked-save schedules",
+  "host_persistence_asan_ubsan": "REUSED from previous candidate 916aa320: 60 load and 72 save schedules; persistence sources unchanged",
+  "host_legacy_asan_ubsan": "REUSED from previous candidate 916aa320: legacy empty files and 192 ranked-save schedules; persistence sources unchanged",
   "menu_fat_emulator": "PASS: language switching, saved preferences, cold starts, touchscreen and keys",
   "power_register_tests": [
     {
@@ -33,12 +33,12 @@
     "old_state_loaded_and_resaved_with_2mib_cure_zh": {
       "state_bytes": 30256,
       "old_sha256": "2e56c81662ce34ba637921e7dfa2b96287babdea12fdc72dd98959c9a1b3f53d",
-      "new_sha256": "e113c3b4f2b756016127ac3e6d42be760fe75a6efb78a7b5c1299a25738e9f99",
+      "new_sha256": "66a6ed78ff4b2cb9cc984da0ebf142a21e8524a1c15fbe9729748db7b29861d9",
       "byte_identical_after_paused_load_save": false,
       "ui_language_still_japanese": true
     },
     "official_8byte_empty_flash_accepted_at_rom_load": true,
-    "nds_sha256": "916aa320a695058269dfb62466cbdf7421f0629dfa1e5de2879a0bccda2e943f"
+    "nds_sha256": "7761bcf730206e73d7c845a70b3af80729ecddc1945f4e7dfabff1c97b6688ba"
   },
   "game_comparisons": [
     {
@@ -190,9 +190,9 @@
     }
   ],
   "elf_sections": {
-    "text": 845712,
+    "text": 846180,
     "data": 376,
-    "bss": 527272
+    "bss": 527252
   },
   "historical_graphite_elf_sections": {
     "text": 212004,
@@ -201,5 +201,118 @@
   },
   "physical_hardware": "Not tested for this menu candidate",
   "audio": "Core unchanged; no new long audio capture",
-  "limitations": "Short emulator cases only; not full-game or real R4 performance acceptance."
+  "limitations": "Short emulator cases only; not full-game or real R4 performance acceptance.",
+  "host_console_predicate": "PASS: actual function, 16 cartridge/machine/BIOS combinations under ASan/UBSan",
+  "startup_b_cases": [
+    {
+      "case": "startup-False-0-False",
+      "active_machine": 1,
+      "bios_loaded": false,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-False-0-True",
+      "active_machine": 1,
+      "bios_loaded": false,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-False-1-False",
+      "active_machine": 1,
+      "bios_loaded": false,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-False-1-True",
+      "active_machine": 1,
+      "bios_loaded": false,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-False-2-False",
+      "active_machine": 2,
+      "bios_loaded": false,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-False-2-True",
+      "active_machine": 2,
+      "bios_loaded": false,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-True-0-False",
+      "active_machine": 1,
+      "bios_loaded": true,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-True-0-True",
+      "active_machine": 1,
+      "bios_loaded": true,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-True-1-False",
+      "active_machine": 1,
+      "bios_loaded": true,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-True-1-True",
+      "active_machine": 1,
+      "bios_loaded": true,
+      "runnable_without_cartridge": false,
+      "after_B_paused": 1,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-True-2-False",
+      "active_machine": 2,
+      "bios_loaded": true,
+      "runnable_without_cartridge": true,
+      "after_B_paused": 0,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    },
+    {
+      "case": "startup-True-2-True",
+      "active_machine": 2,
+      "bios_loaded": true,
+      "runnable_without_cartridge": true,
+      "after_B_paused": 0,
+      "reopened_menu": 1,
+      "responsive_after_step": 2
+    }
+  ],
+  "about_three_locales": "PASS: main page and both detail pages",
+  "ui_font_translation_entries": 127
 }

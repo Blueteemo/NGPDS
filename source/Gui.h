@@ -12,6 +12,7 @@ void quickSelectGame(void);
 void nullUINormal(int key);
 void nullUIDebug(int key);
 void resetConsole(void);
+bool hasConsoleProgram(void);
 
 void uiNullNormal(void);
 void uiAbout(void);

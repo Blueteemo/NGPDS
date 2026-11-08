@@ -16,7 +16,7 @@ With **Autosave Settings** enabled, leaving the menu persists the interface lang
 - A five-row, 256×192 menu uses a 24 KiB 4bpp canvas and 768 dirty flags. It reuses VRAM H, uploads changed tiles through CPU stores, and adds no DMA or HBlank handler. A single full presentation copies at most 24 KiB; multiple menu redraws can occur during an input event. This is not a measured per-frame hardware budget.
 - `Menu.c` adapts the existing Shared menu interfaces locally. `Shared/EmuMenu.c` is excluded from this build; no dependency revision or dependency source is changed. Its MIT notice is retained in `Docs/licenses/NDS_Shared-menu.txt`.
 - The existing 792-byte settings layout is unchanged. A tagged value in the previously unused word records the UI language; unknown legacy contents are preserved until a translated UI is selected. `.fla` and `.sta` formats are unchanged. UTF-8 filenames are displayed without translation; unsupported glyphs fall back to `?`.
-- Empty HLE operation now stays idle when no cartridge or real BIOS is loaded, including when Autopause Game is disabled. Debug Step Frame displays a message instead of entering an uninitialized CPU. Inserted cartridges and real-BIOS operation retain the existing path.
+- Empty HLE operation now stays idle when no cartridge or BIOS for the active machine is loaded, including when Autopause Game is disabled. Debug Step Frame displays a message instead of entering an uninitialized CPU. Inserted cartridges and matching real-BIOS operation retain the existing path. A Color BIOS does not make an empty monochrome HLE console runnable.
 - Rendering, CPU, audio, FlashStore and SafeFile implementations remain byte-for-byte unchanged from the graphite baseline. This does not add an audio-accuracy improvement.
 
 ## Build and host tests
@@ -51,3 +51,23 @@ The enlarged executable/font data still allowed the existing 2 MiB + 4 KiB ROM a
 | ![English](images/menu-english.png) | ![简体中文](images/menu-chinese.png) | ![日本語](images/menu-japanese.png) |
 
 [Machine-readable validation summary](menu-validation.json) records the tested binary hash, memory sections and comparison results.
+
+## Startup B correction and About layout
+
+Before this correction, a fresh session with Auto machine selection and only a Color BIOS configured could hang after B closed the startup menu. Auto selected the monochrome machine without a cartridge, while the menu incorrectly treated *either* loaded BIOS as permission to run that machine. It then entered the empty monochrome HLE CPU. L+R could no longer reopen the menu. The previous no-BIOS checks did not cover this partial-BIOS configuration.
+
+The shared predicate now permits execution with an inserted cartridge or a real BIOS matching the **active** machine. Menu close, idle scheduling and Debug Step Frame use the same predicate. It preserves standalone Color BIOS execution when Color is the active machine. No ROM, audio clock, graphics pipeline or save-format changes are involved.
+
+The regression covers 12 emulator combinations of no BIOS / Color BIOS, Auto / monochrome / Color selection, and Autopause on / off, including the same relevant flags as the user card. A separate host test compiles the actual predicate and checks all 16 cartridge/machine/BIOS combinations, without distributing a BIOS:
+
+```sh
+python3 tests/test_console_program.py
+```
+
+The About home page now has five entries: upstream version, original author, fork maintainer, button guide, and components/font details. The maintainer is **千岚之夏** in Chinese and **Blueteemo** in English/Japanese, without parentheses. Button mappings and core/font versions remain available in their detail pages; the current game is omitted from About.
+
+| English | 简体中文 | 日本語 |
+| --- | --- | --- |
+| ![English About](images/about-english.png) | ![中文关于](images/about-chinese.png) | ![日本語](images/about-japanese.png) |
+
+This correction has automated emulator acceptance, not a new physical NDS/R4 pass. The old candidate and its evidence remain preserved locally.

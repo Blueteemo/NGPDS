@@ -94,7 +94,7 @@ void guiRunLoop(void) {
 	updateTime();
 	/* Honor the user's pause preference once a cartridge/real BIOS exists;
 	 * an empty HLE console has no standalone CPU program to execute. */
-	if (!gameInserted && !g_BIOSBASE_BNW && !g_BIOSBASE_COLOR && !pauseEmulation) {
+	if (!hasConsoleProgram() && !pauseEmulation) {
 		pauseEmulation = true;
 		soundSetMuteGUI();
 	}
@@ -264,7 +264,7 @@ void exitUI() {
 	/* HLE has no standalone console program without a cartridge. Keep
 	 * its CPU idle so the empty-ROM menu can be reopened. Real BIOS
 	 * standalone operation and every inserted cartridge retain their path. */
-	pauseEmulation = !gameInserted && !g_BIOSBASE_BNW && !g_BIOSBASE_COLOR;
+	pauseEmulation = !hasConsoleProgram();
 	soundSetMuteGUI();
 }
 
