@@ -216,7 +216,7 @@ int loadSettings() {
         ok=f && fread(&value,1,sizeof(value),f)==sizeof(value) &&
             fgetc(f)==EOF && !ferror(f) && configDataValid(&value);
         if(f && fclose(f))ok=false;
-        if(ok){cfg=value;applyConfigData();settingsLoadBlocked=false;infoOutput("Settings loaded.");}
+        if(ok){cfg=value;applyConfigData();settingsLoadBlocked=false;}
         else {
             settingsLoadBlocked=true;emuSettings&=~(AUTOSAVE_SETTINGS|AUTOSAVE_NVRAM);
             infoOutput("Settings read failed: autosave disabled.");
@@ -255,7 +255,7 @@ bool saveFlashChecked(void) {
     return true;
 }
 void saveNVRAM(void) {saveFlashChecked();}
-void loadNVRAM(void) {
+static void loadFlash(bool showSuccess) {
     if(!gameInserted||!loadedFilename[0])return;
     char previous[FILEPATH_MAX_LENGTH],name[FILENAME_MAX_LENGTH];
     if(!storageEnter(previous)){flashLoadBlocked=true;return;}
@@ -271,8 +271,9 @@ void loadNVRAM(void) {
     chdir(previous);
     if(status<0)flashLoadBlocked=true;else if(status>0)flashLoadBlocked=false;
     if(status<0){persistenceFailures++;infoOutput("Invalid/unreadable flash; saving blocked.");}
-    else if(status>0)infoOutput("Flash loaded.");
+    else if(status>0 && showSuccess)infoOutput("Flash loaded.");
 }
+void loadNVRAM(void) {loadFlash(true);}
 
 typedef struct {void *data;unsigned size;} StateBuffer;
 static bool stateValid(FILE *f,void *ctx) {
@@ -436,7 +437,7 @@ bool loadGame(const char *gameName) {
                 else {char dir[FILEPATH_MAX_LENGTH];if(getcwd(dir,sizeof(dir)))snprintf(loadedROMPath,sizeof(loadedROMPath),"%s%s%s",dir,strcmp(dir,"/")?"/":"",gameName);}
             }
 			if (emuSettings & AUTOLOAD_NVRAM) {
-				loadNVRAM();
+				loadFlash(false);
 			}
             if(flashLoadBlocked){gameInserted=false;return true;}
 			if (emuSettings & AUTOLOAD_STATE) {

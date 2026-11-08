@@ -1,11 +1,11 @@
 {
   "date": "2026-11-09",
-  "baseline": "8a0dca610862085cb8cbc5aa4efa9b4d9d64ee32",
-  "nds_sha256": "7761bcf730206e73d7c845a70b3af80729ecddc1945f4e7dfabff1c97b6688ba",
+  "baseline": "6fc26272de808217257dd298f8e5756617d8f795",
+  "nds_sha256": "823ca5cabc2bd2ddda4548083556e5806ddd325a5df6623ca5c8f598e0ac0638",
   "nds_bytes": 908288,
   "clean_rebuild_sha256_matches": true,
   "host_ui_asan_ubsan": "PASS",
-  "host_config": "PASS",
+  "host_config": "PASS: normal load silent; late read/magic/truncation errors reported, preferences preserved",
   "host_persistence_asan_ubsan": "REUSED from previous candidate 916aa320: 60 load and 72 save schedules; persistence sources unchanged",
   "host_legacy_asan_ubsan": "REUSED from previous candidate 916aa320: legacy empty files and 192 ranked-save schedules; persistence sources unchanged",
   "menu_fat_emulator": "PASS: language switching, saved preferences, cold starts, touchscreen and keys",
@@ -33,12 +33,12 @@
     "old_state_loaded_and_resaved_with_2mib_cure_zh": {
       "state_bytes": 30256,
       "old_sha256": "2e56c81662ce34ba637921e7dfa2b96287babdea12fdc72dd98959c9a1b3f53d",
-      "new_sha256": "66a6ed78ff4b2cb9cc984da0ebf142a21e8524a1c15fbe9729748db7b29861d9",
+      "new_sha256": "c54623c14328e6163f5b400c30c7041241821e7fb3b110fb60bdf8d460b3456b",
       "byte_identical_after_paused_load_save": false,
       "ui_language_still_japanese": true
     },
     "official_8byte_empty_flash_accepted_at_rom_load": true,
-    "nds_sha256": "7761bcf730206e73d7c845a70b3af80729ecddc1945f4e7dfabff1c97b6688ba"
+    "nds_sha256": "823ca5cabc2bd2ddda4548083556e5806ddd325a5df6623ca5c8f598e0ac0638"
   },
   "game_comparisons": [
     {
@@ -190,7 +190,7 @@
     }
   ],
   "elf_sections": {
-    "text": 846180,
+    "text": 845988,
     "data": 376,
     "bss": 527252
   },
@@ -314,5 +314,52 @@
     }
   ],
   "about_three_locales": "PASS: main page and both detail pages",
-  "ui_font_translation_entries": 127
+  "ui_font_translation_entries": 127,
+  "host_menu_release": "PASS: actual same-frame consumption and release filter under ASan/UBSan",
+  "menu_input_regression": [
+    {
+      "autopause": false,
+      "swap_ab": false,
+      "close_first_frame": {
+        "emuinput": 0,
+        "ngp_joypad": 0
+      },
+      "held_B_joypad": 0,
+      "new_B_joypad": 16
+    },
+    {
+      "autopause": false,
+      "swap_ab": true,
+      "close_first_frame": {
+        "emuinput": 0,
+        "ngp_joypad": 0
+      },
+      "held_B_joypad": 0,
+      "new_B_joypad": 32
+    },
+    {
+      "autopause": true,
+      "swap_ab": false,
+      "close_first_frame": {
+        "emuinput": 0,
+        "ngp_joypad": 0
+      },
+      "held_B_joypad": 0,
+      "new_B_joypad": 16
+    },
+    {
+      "autopause": true,
+      "swap_ab": true,
+      "close_first_frame": {
+        "emuinput": 0,
+        "ngp_joypad": 0
+      },
+      "held_B_joypad": 0,
+      "new_B_joypad": 32
+    }
+  ],
+  "startup_settings_silent": true,
+  "autoload_flash_silent": true,
+  "manual_flash_success_feedback": true,
+  "corrupt_flash_error_still_visible_and_game_blocked": true
 }

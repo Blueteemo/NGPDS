@@ -66,6 +66,12 @@ static char browserTitle[256];
 static int browserFirst, browserSelected, browserItems;
 static int pendingBrowserSelection = -1;
 static int oldNameOffset = -1;
+static u32 menuReleaseMask;
+
+static u32 filterMenuRelease(u32 held) {
+	menuReleaseMask &= held;
+	return held & ~menuReleaseMask;
+}
 // How deep we are in the menu tree
 static int menuLevel = 0;
 static char menuPath[MENU_MAX_DEPTH];
@@ -240,6 +246,12 @@ bool isMenuOpen() {
 }
 
 void exitUI() {
+	/* The action that closes a menu belongs to the menu until released.
+	 * Refresh now too: the emulated CPU can run later in this same frame. */
+	u32 held = keysHeld();
+	menuReleaseMask |= held & (KEY_A | KEY_B | KEY_X | KEY_Y |
+		KEY_START | KEY_SELECT | KEY_L | KEY_R);
+	EMUinput = convertInput(filterMenuRelease(held));
 	if (settingsChanged && (emuSettings & AUTOSAVE_SETTINGS)) {
 		saveSettings();
 	}
@@ -317,7 +329,7 @@ int getMenuInput(int itemCount) {
 
 //---------------------------------------------------------------------------------
 int getInput(void) {
-	EMUinput = convertInput(keysHeld());
+	EMUinput = convertInput(filterMenuRelease(keysHeld()));
 	int keyHit = keysDown();
 	int dpad = keysDownRepeat() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT);
 	keyHit = dpad | (keyHit & (KEY_A | KEY_B | KEY_X | KEY_Y | KEY_START | KEY_L | KEY_R | KEY_TOUCH));

@@ -19,10 +19,11 @@ code=r'''
 #define AUTOSAVE_NVRAM 16
 ConfigData cfg;
 static bool settingsLoadBlocked;
-static unsigned emuSettings, applied, opens, mutation;
+static unsigned emuSettings, applied, opens, mutation, messages;
+static char lastMessage[256];
 static bool storageEnter(char *p) {return getcwd(p,256)!=NULL;}
 static void applyConfigData(void) {emuSettings=cfg.emuSettings;applied++;}
-static void infoOutput(const char *s) {(void)s;}
+static void infoOutput(const char *s) {messages++;snprintf(lastMessage,sizeof(lastMessage),"%s",s);}
 static FILE *checkedOpen(const char *p,const char *mode) {
  if (++opens==2 && mutation) {
   if (mutation==1) {FILE *f=fopen(p,"rb+");assert(f);fputc('X',f);fclose(f);}
@@ -40,13 +41,13 @@ code+=r'''
 static void fixture(void) {
  ConfigData c={0};memcpy(c.magic,"cfg",4);c.emuSettings=0x20309;c.gammaValue=1;c.language=1;strcpy(c.currentPath,"/");strcpy(c.biosPathColor,"/ngpc_bios.bin");
  FILE*f=fopen(settingName,"wb");assert(f&&fwrite(&c,1,sizeof(c),f)==sizeof(c)&&!fclose(f));
- memset(&cfg,0,sizeof(cfg));strcpy(cfg.biosPathColor,"/initial");settingsLoadBlocked=false;emuSettings=0x2031b;opens=applied=mutation=0;
+ memset(&cfg,0,sizeof(cfg));strcpy(cfg.biosPathColor,"/initial");settingsLoadBlocked=false;emuSettings=0x2031b;opens=applied=mutation=messages=0;lastMessage[0]=0;
 }
 int main(void) {
  char d[]="/tmp/ngpds-config-XXXXXX";assert(mkdtemp(d)&&!chdir(d));assert(sizeof(ConfigData)==792);
- fixture();assert(!loadSettings());assert(applied==1&&emuSettings==0x20309&&!strcmp(cfg.biosPathColor,"/ngpc_bios.bin"));
- for(unsigned n=1;n<=3;n++) {fixture();mutation=n;int result=loadSettings();if(result!=1||applied||!settingsLoadBlocked||(emuSettings&0x12)) {fprintf(stderr,"FAIL mutation=%u result=%d applied=%u flags=%x blocked=%d\n",n,result,applied,emuSettings,settingsLoadBlocked);return 1;}assert(!strcmp(cfg.biosPathColor,"/initial"));}
- remove(settingName);chdir("/");assert(!rmdir(d));puts("PASS actual loadSettings: legacy flags/BIOS preserved; late bad magic, trailing bytes and truncation rejected before apply; autosave disabled on read inconsistency");return 0;
+ fixture();assert(!loadSettings());assert(messages==0);assert(applied==1&&emuSettings==0x20309&&!strcmp(cfg.biosPathColor,"/ngpc_bios.bin"));
+ for(unsigned n=1;n<=3;n++) {fixture();mutation=n;int result=loadSettings();if(result!=1||applied||!settingsLoadBlocked||(emuSettings&0x12)) {fprintf(stderr,"FAIL mutation=%u result=%d applied=%u flags=%x blocked=%d\n",n,result,applied,emuSettings,settingsLoadBlocked);return 1;}assert(messages && strstr(lastMessage,"Settings read failed"));assert(!strcmp(cfg.biosPathColor,"/initial"));}
+ remove(settingName);chdir("/");assert(!rmdir(d));puts("PASS actual loadSettings: success silent, failures reported; legacy flags/BIOS preserved; late bad magic, trailing bytes and truncation rejected before apply; autosave disabled on read inconsistency");return 0;
 }
 '''
 with tempfile.TemporaryDirectory(prefix='ngpds-config-build-') as d:

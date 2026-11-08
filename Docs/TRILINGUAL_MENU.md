@@ -71,3 +71,18 @@ The About home page now has five entries: upstream version, original author, for
 | ![English About](images/about-english.png) | ![中文关于](images/about-chinese.png) | ![日本語](images/about-japanese.png) |
 
 This correction has automated emulator acceptance, not a new physical NDS/R4 pass. The old candidate and its evidence remain preserved locally.
+
+## Quiet startup and menu-dismissal input
+
+Successful startup settings loading and automatic Flash loading are silent. File → Load Flash still confirms a successful explicit request. Invalid/unreadable Flash, settings errors and save failures retain their messages and protection. Automatic state-loading feedback is unchanged.
+
+Closing a menu now consumes the action keys held at dismissal until each is released. This includes the same frame that resumes the emulated CPU; a second press after release is delivered normally. Directional input is retained. A touch-only dismissal does not consume a newly pressed game key. This adds a four-byte release mask and constant-time filtering, with no audio/core/register timing or persistence-format changes.
+
+New checks compile the actual menu-exit barrier and release filter, exercise independent releases and retained direction input, and assert that successful config loading is silent while read errors remain reported:
+
+```sh
+python3 tests/test_menu_release.py
+python3 tests/test_config.py
+```
+
+Emulator checks observe both EMUinput and NGPC joypad register 0x6FB0. In all four Autopause on/off × A/B mapping combinations, the dismissal press and continued hold produce no game action; a fresh press after release produces the expected mapped button. Isolated FAT tests cover silent automatic Flash loading, confirmed manual loading, and visible corrupt-save rejection. Prior startup-B, language/power/state tests and 21 selected RGB5 game comparisons were repeated. This remains automated acceptance, without new physical console validation.
