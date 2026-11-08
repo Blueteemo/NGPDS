@@ -1,10 +1,10 @@
 # Scanline state and sparse OBJ composition
 
-Record backdrop/palette, background offsets and sprite register/attribute state at the existing visible-line boundary. Unchanged sprite frames retain native OAM; changed rows are binned by source Y, composed into sparse 32x32 8bpp OBJ blocks, and uploaded with aligned word stores. Preserve the three sprite priorities, transparency and window clipping. The atlas extends E into unused F/G banks; background A-D and existing palette DMA keep their resources. No new DMA channel or HBlank interrupt.
+Record backdrop/palette, background offsets and sprite register/attribute state at the existing visible-line boundary. Unchanged sprite frames retain native OAM; changed rows are binned by source Y, composed into sparse 32x32 8bpp OBJ blocks, and uploaded with aligned word stores. Preserve the three sprite priorities, transparency and window clipping. The atlas extends E into unused F/G banks; background A-D retain their allocations. The sprite compositor adds no DMA channel or HBlank CPU interrupt. Backdrop replay uses DMA1; sparse palette replay uses DMA2/DMA3 after the existing VBlank transfers, and DMA0 retains the scroll stream.
 
 Exact input caching, packed-word merging and per-block revision/content comparisons skip repeated composition and unchanged VRAM uploads. ARM/O3 remains enabled without a diagnostic macro. There is no game ID, fixed frame or image signature condition, and no audio-synthesis/clock modification. Position/attribute raster behavior is covered; arbitrary within-line character-pattern rewriting and every possible cartridge are not claimed.
 
-The optimized baseline has historical user NDSi/R4 NTR experience. Current automation preserves that baseline: 624 presentation-aligned frames per Japanese/translated version; reference core matches 621/624 exactly, with three existing one-line differences of up to 156 pixels. Emulator-cycle timing is not hardware timing. New file-persistence changes are separate and are not given an invented hardware pass.
+The optimized baseline has historical user NDSi/R4 NTR experience. Current automation preserves that baseline: 623 presentation-aligned frames per Japanese/translated version; reference core matches 620/623 exactly, with three existing one-line differences of up to 156 pixels. Emulator-cycle timing is not hardware timing. New file-persistence changes are separate and are not given an invented hardware pass.
 
 Portable independent pixel oracle:
 

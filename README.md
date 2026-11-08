@@ -1,111 +1,62 @@
-# NGPDS V0.6.0
+# NGPDS — Blueteemo Fork
 
-<img align="right" width="220" src="./logo.png" alt="The NeoGeo Pocket P" />
+[简体中文](README.zh-CN.md)
 
-This is a SNK Neogeo Pocket (Color) emulator for the Nintendo DS(i)/3DS.
+NGPDS is a Neo Geo Pocket / Neo Geo Pocket Color emulator for Nintendo DS-family systems, originally developed by **Fredrik Ahlström (FluBBaOfWard)**. This unofficial fork preserves compatibility, rendering-performance, and save-handling work developed while testing Memories Off - Pure and Infinity Cure.
 
-## How to use
+[Original project](https://github.com/FluBBaOfWard/NGPDS) · [Original usage and menu documentation](Docs/UPSTREAM_README.md)
 
-1. Create a folder named "ngpds" in either the root of your flash card or in
- the data folder. This is where settings and save files end up.
-2. Now put game/bios files into a folder where you have (NGP) roms, max
- 768 games per folder, filenames must not be longer than 127 chars. You can use
- zip-files (as long as they use the deflate compression). CAUTION! Games that
- require SLOT-2 RAM can not be used with zip-files!
-3. Depending on your flashcart you might have to DLDI patch the emulator.
+## Choose a branch
 
-Note! You need a bios to be able to save in game.
-The save file should be compatible with most other NeoGeo Pocket emulators.
+| Branch | Contents |
+| --- | --- |
+| [`personal/combined-stable`](https://github.com/Blueteemo/NGPDS/tree/personal/combined-stable) | Combined Pure/Cure graphics, performance, Flash-save, and settings improvements. Runtime source matches the locally accepted combined baseline; documentation is updated. |
+| `main` | Upstream runtime baseline plus this fork's documentation. **Does not contain the combined improvements.** |
+| [`fix/raster-graphics-performance`](https://github.com/Blueteemo/NGPDS/tree/fix/raster-graphics-performance) | Separate graphics/performance proposal, [upstream PR #15](https://github.com/FluBBaOfWard/NGPDS/pull/15). |
+| [`fix/flash-autosave-persistence`](https://github.com/Blueteemo/NGPDS/tree/fix/flash-autosave-persistence) | Separate persistence proposal, [upstream PR #14](https://github.com/FluBBaOfWard/NGPDS/pull/14). |
 
-When the emulator starts, you can either press L+R or tap on the screen to open
-up the menu.
-Now you can use the cross or touchscreen to navigate the menus, A or double tap
-to select an option, B or the top of the screen to go back a step.
+The combined branch preserves accepted commit `8b9a49b2ebb1f37d9e49a835c5f833ca41ec58f2` and its pinned dependencies. Later isolated scroll-boundary experiments and the reduced save-only candidate are **not** included. The upstream proposals remain unmerged. This documentation update does not publish a new emulator binary release.
 
-To select between the tabs use R & L or the touchscreen.
+## Combined-branch changes
 
-Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
- RAM on these devices to play games larger than 2MB.
+- **Memories Off - Pure:** improve the tested character transitions, scanline background scrolling, and profile-page text. Cache sprite inputs and skip redundant composition and uploads to reduce rendering work.
+- **Infinity Cure:** restore missing story text in the tested gameplay scenes while preserving the tested CG, background, and layer behavior.
+- **Flash saves and settings:** add a Flash autosave option, improve configuration persistence, validate replacement files, retain recovery copies, and skip unchanged Flash writes. Tested legacy `.fla`, `.sta`, and `settings.cfg` formats remain compatible, including valid eight-byte empty Flash records.
 
-## Menu
+Rendering changes address general scanline/register behavior; there are no game-ID, fixed-frame, or image-signature conditions. No audio-synthesis or clock workaround is introduced. The sprite compositor adds no DMA channel or HBlank CPU interrupt; backdrop replay uses DMA1, palette replay uses DMA2/DMA3 after the existing VBlank transfers, and DMA0 retains the scroll stream.
 
-### File
+The combined branch enables Flash/settings autosaving for a fresh configuration. Existing configurations retain their explicit choices, including disabled autosaving. **Replacing the executable does not turn an existing Off setting On.** With Flash autosaving off, use **File → Save Flash** to persist in-game progress before leaving.
 
-* Load Game: Select a game to load.
-* Load State: Load a previously saved state of the currently running game.
-* Save State: Save a state of the currently running game.
-* Load Flash: Load flash ram for the currently running game.
-* Save Flash: Save flash ram for the currently running game.
-* Save Settings: Save the current settings.
-* Eject Game: Remove the game, can be used to enter bios settings.
-* Reset Console: Reset the console.
-* Quit Emulator: (If supported.)
+## Validation and limitations
 
-### Options
+The combined baseline passed automated emulator checks, save-failure injection, configuration tests, and audio comparisons. Testing focused on the Japanese releases and the specific translated ROM versions used during development. Other translation patches, expanded ROMs, scenes, and games are not automatically covered.
 
-* Controller:
-  * B Autofire: Select if you want autofire on button B.
-  * A Autofire: Select if you want autofire on button A.
-  * Swap A-B: Swap which NDS button is mapped to which NGP button.
-* Display:
-  * Gamma: Lets you change the gamma ("brightness").
-  * B&W Palette: Here you can select the palette for B & W games.
-* Machine:
-  * Language: Select between Japanese and English.
-  * Machine: Select the emulated machine.
-  * Change Batteries: Change to new main batteries (AA/LR6).
-  * Change Sub Battery: Change to a new sub battery (CR2032).
-  * Cpu Speed Hacks: Allow speed hacks.
-  * Z80 Clock: You can underclock to get better speed on the DS.
-  * Select BnW Bios: Load a real NGP Bios, recommended.
-  * Select Color Bios: Load a real NGPC Bios, recommended.
-* Settings:
-  * Speed: Switch between speed modes.
-    * Normal: Game runs at it's normal speed.
-    * 200%: Game runs at double speed.
-    * Max: Games can run up to 4 times normal speed (might change).
-    * 50%: Game runs at half speed.
-  * Autoload State: Toggle Savestate autoloading. Automagically load the savestate associated with the current game.
-  * Autoload Flash RAM: Toggle flash/save ram autoloading. Automagically load the flash ram associated with the current game.
-  * Autosave Settings: This will save settings when leaving menu if any changes are made.
-  * Autopause Game: Toggle if the game should pause when opening the menu.
-  * Powersave 2nd Screen: If graphics/light should be turned off for the GUI screen when menu is not active.
-  * Emulator on Bottom: Select if top or bottom screen should be used for emulator, when menu is active emulator screen is allways on top.
-  * Autosleep: Doesn't work.
-* Debug:
-  * Debug Output: Show FPS and logged text.
-  * Disable Foreground: Turn on/off foreground rendering.
-  * Disable Background: Turn on/off background rendering.
-  * Disable Sprites: Turn on/off sprite rendering.
-  * Step Frame: Emulate one frame.
+An earlier optimized C build received positive user feedback on NDSi + R4 in ordinary DS/NTR mode. This is historical feedback, **not** a new hardware validation of the final combined executable or its later save changes. Save protection does not guarantee recovery from every SD-card fault or sudden power loss. Reference-core agreement is not physical-hardware proof; complete compatibility and timing accuracy are not claimed.
 
-### About
+Combined-branch implementation notes: [rendering](https://github.com/Blueteemo/NGPDS/blob/personal/combined-stable/Docs/raster.md) and [persistence](https://github.com/Blueteemo/NGPDS/blob/personal/combined-stable/Docs/persistence.md).
 
-Some dumb info about the game and emulator...
+## Build and use
 
-## Controls
+For the combined source:
 
-* NDS A & B buttons are mapped to NeoGeo Pocket B & A.
-* NDS Start & X is mapped to NeoGeo Pocket Option.
-* NDS Select & Y is mapped to NeoGeo Pocket Power.
-* NDS d-pad is mapped to NeoGeo Pocket d-pad.
-* NDS L button is mapped to NeoGeo D (debug).
+```sh
+git clone --recursive --branch personal/combined-stable https://github.com/Blueteemo/NGPDS.git
+cd NGPDS
+# Configure your existing Wonderful / BlocksDS installation first.
+make -j8 COMPDB=0
+```
 
-## Games
+The accepted build used Wonderful arm-none-eabi GCC 16.2.0 and BlocksDS 1.24.0. `COMPDB=0` disables compilation-database merging, not code generation. Keep the pinned submodule revisions when reproducing that baseline.
 
-* Memories of - Pure: Glitches everywhere.
-* Neo Poke Pro Yakyuu: Sprite multiplexing doesn't work.
-* Pachi-Slot Aruze Oukoku Pocket - Azteca (J): Palette glitches.
-* Pachi-Slot Aruze Oukoku Pocket - Dekahel 2 (J): Palette glitches.
-* Pachi-Slot Aruze Oukoku Pocket - Delsol 2 (J): Palette glitches.
-* Pachi-Slot Aruze Oukoku Pocket - e-Cup (J): Palette glitches.
-* Pachi-Slot Aruze Oukoku Pocket - Hanabi (J) (v1.02): Palette glitches.
-* Pachi-Slot Aruze Oukoku Pocket - Hanabi (J) (v1.04): Palette glitches.
-* Pachi-Slot Aruze Oukoku Pocket - Oohanabi (J): Palette glitches.
-* Pachi-Slot Aruze Oukoku Pocket - Porcano 2 (J): Palette glitches.
-* Pachi-Slot Aruze Oukoku Pocket - Ward of Lights (J): Palette glitches.
-* Sonic The Hedgehog: First boss sometimes disappear, try to use a save state soon before the boss and reload and try again.
-* Super Real Mahjong - Premium Collection: Sprite multiplexing & palette updates doesn't' work, game play locks up.
+Put `NGPDS.nds` on your card, retain the `ngpds/` data directory, and supply your own games and any required BIOS. Back up saves/configuration before replacing an executable. Menu controls, BIOS selection, and the original DS/DS Lite memory constraints are documented in the [preserved upstream README](Docs/UPSTREAM_README.md). Its game-issue list describes the **upstream baseline**, not a verdict on the modified branch. On the combined branch, **Autosave Flash** is an additional setting.
+
+## Reproducible diagnostics
+
+[NGPC scroll tests](https://github.com/Blueteemo/ngpc-scroll-tests) provides original test ROMs, source, build instructions, and reference observations. It is a separate MIT-licensed diagnostic project, not the license for this emulator. The later minimal K2GE experiment is kept separate from this combined baseline.
+
+## Authorship and notices
+
+Original NGPDS credits and copyright notices are retained below and in the preserved upstream documentation. Dependency notices remain with their respective sources. This fork does not imply endorsement by the original author and does not assign a new license to upstream code. No commercial game ROM, BIOS, private save, or copyrighted-game screenshot is provided.
 
 ## Credits
 
