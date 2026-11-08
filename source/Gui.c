@@ -1,6 +1,8 @@
 #include <nds.h>
 
 #include "Gui.h"
+#include "UiText.h"
+#include "UiCanvas.h"
 #include "Shared/EmuMenu.h"
 #include "Shared/EmuSettings.h"
 #include "Emubase.h"
@@ -21,6 +23,10 @@
 
 void hacksInit(void);
 
+static void uiLanguageSet(void);
+static void debugStepFrame(void);
+static const char *getUiLanguageText(void);
+static const char *getBufferModeText(void);
 static void gammaChange(void);
 static void paletteChange(void);
 static const char *getPaletteText(void);
@@ -79,10 +85,10 @@ const MItem ctrlItems[] = {
 const MItem displayItems[] = {
 	{"Gamma:", gammaChange, getGammaText},
 	{"B&W Palette:", paletteChange, getPaletteText},
-	{"VRAM Double Buffer:", bufferModeSet},
+	{"VRAM Double Buffer:", bufferModeSet, getBufferModeText},
 };
 const MItem machineItems[] = {
-	{"Language:", languageSet, getLanguageText},
+	{"Console Language:", languageSet, getLanguageText},
 	{"Machine:", machineSet, getMachineText},
 //	{"NGPC B&W Palette:", ngpcPalSet, getNgpPalText},
 	{"Change Batteries", batteryChange},
@@ -93,14 +99,15 @@ const MItem machineItems[] = {
 	{"Select Color Bios", selectColorBios},
 };
 const MItem setItems[] = {
-	{"Speed:", speedSet, getSpeedText},
-	{"Autoload State:", autoStateSet, getAutoStateText},
-	{"Autoload Flash:", autoNVRAMSet, getAutoNVRAMText},
-    {"Autosave Flash:", saveNVRAMSet, getSaveNVRAMText},
+	{"Interface Language:", uiLanguageSet, getUiLanguageText},
+	{"Autosave Flash:", saveNVRAMSet, getSaveNVRAMText},
 	{"Autosave Settings:", autosaveSettingsSet, getAutoSettingsText},
+	{"Autoload Flash:", autoNVRAMSet, getAutoNVRAMText},
+	{"Menu Screen Off:", powerSaveSet, getPowerSaveText},
+	{"Autoload State:", autoStateSet, getAutoStateText},
 	{"Autopause Game:", autoPauseGameSet, getAutoPauseGameText},
-	{"Powersave 2nd Screen:", powerSaveSet, getPowerSaveText},
 	{"Emulator on Bottom:", screenSwapSet, getScreenSwapText},
+	{"Speed:", speedSet, getSpeedText},
 	{"Autosleep:", sleepSet, getSleepText},
 };
 const MItem debugItems[] = {
@@ -108,17 +115,53 @@ const MItem debugItems[] = {
 	{"Disable Foreground:", fgrLayerSet, getFgrLayerText},
 	{"Disable Background:", bgrLayerSet, getBgrLayerText},
 	{"Disable Sprites:", sprLayerSet, getSprLayerText},
-	{"Step Frame", stepFrame},
+	{"Step Frame", debugStepFrame},
 };
 const MItem quitItems[] = {
 	{"Yes ", exitGameSafely},
 	{"No ", backOutOfMenu},
 };
 
+extern char gameInfoString[32];
+static const char *aboutVersion(void) { return EMUVERSION; }
+static const char *aboutAuthor(void) { return "FluBBaOfWard"; }
+static const char *aboutGame(void) {
+	if (!gameInserted) return "No game loaded";
+	updateGameInfo();
+	return gameInfoString + 11;
+}
+static const char *aboutA(void) { return "NGP A"; }
+static const char *aboutB(void) { return "NGP B"; }
+static const char *aboutD(void) { return "NGP D"; }
+static const char *aboutOption(void) { return "Option button"; }
+static const char *aboutPower(void) { return "Power button"; }
+static const char *aboutPad(void) { return "Joystick"; }
+static const char *aboutZ80(void) { return ARMZ80VERSION; }
+static const char *aboutCpu(void) { return TLCS900VERSION; }
+static const char *aboutGpu(void) { return K2GEVERSION; }
+static const char *aboutPsg(void) { return ARMSNGGVERSION; }
+static const char *aboutFont(void) { return "Fusion Pixel 12px"; }
+const MItem aboutItems[] = {
+	{"NGPDS", uiDummy, aboutVersion},
+	{"Original Author", uiDummy, aboutAuthor},
+	{"Game", uiDummy, aboutGame},
+	{"B Button", uiDummy, aboutA},
+	{"A Button", uiDummy, aboutB},
+	{"L Button", uiDummy, aboutD},
+	{"X / Start", uiDummy, aboutOption},
+	{"Y / Select", uiDummy, aboutPower},
+	{"D-Pad", uiDummy, aboutPad},
+	{"ARMZ80", uiDummy, aboutZ80},
+	{"TLCS-900H", uiDummy, aboutCpu},
+	{"K2GE", uiDummy, aboutGpu},
+	{"SN76496", uiDummy, aboutPsg},
+	{"UI Font", uiDummy, aboutFont},
+};
+
 const Menu menu0 = MENU_M("", uiNullNormal, dummyItems);
-Menu menu1 = MENU_M("", uiAuto, fileItems);
-const Menu menu2 = MENU_M("", uiAuto, optionItems);
-const Menu menu3 = MENU_M("", uiAbout, dummyItems);
+Menu menu1 = MENU_M("Files & Saves", uiAuto, fileItems);
+const Menu menu2 = MENU_M("Options", uiAuto, optionItems);
+const Menu menu3 = MENU_M("About", uiAbout, aboutItems);
 const Menu menu4 = MENU_M("Controller Settings", uiAuto, ctrlItems);
 const Menu menu5 = MENU_M("Display Settings", uiDisplay, displayItems);
 const Menu menu6 = MENU_M("Machine Settings", uiMachine, machineItems);
@@ -128,6 +171,29 @@ const Menu menu9 = MENU_M("Quit Emulator?", uiAuto, quitItems);
 const Menu menu10 = MENU_M("", uiDummy, dummyItems);
 
 const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6, &menu7, &menu8, &menu9, &menu10 };
+
+static void debugStepFrame(void) {
+	if (!gameInserted && !g_BIOSBASE_BNW && !g_BIOSBASE_COLOR) {
+		infoOutput("Load a game first.");
+		return;
+	}
+	stepFrame();
+}
+
+static void uiLanguageSet(void) {
+	gUiLanguage = (gUiLanguage + 1) % UI_LANGUAGE_COUNT;
+	settingsChanged = true;
+	uiLanguageChanged();
+}
+
+static const char *getUiLanguageText(void) {
+	static const char *const names[] = {"English", "简体中文", "日本語"};
+	return names[gUiLanguage < UI_LANGUAGE_COUNT ? gUiLanguage : 0];
+}
+
+static const char *getBufferModeText(void) {
+	return autoTxt[gBufferEnable & 1];
+}
 
 static int oldBattery;
 u8 gZ80Speed = 0;
@@ -167,59 +233,21 @@ void quickSelectGame(void) {
 	closeMenu();
 }
 
-void uiNullNormal() {
+void uiNullNormal(void) {
 	uiNullDefault();
 	oldBattery = 0;
 }
 
-void uiAbout() {
-	cls(1);
-	updateGameInfo();
-	drawTabs();
-	drawMenuText("B:        NGP A button", 4, 0);
-	drawMenuText("A:        NGP B button", 5, 0);
-	drawMenuText("L:        NGP D button", 6, 0);
-	drawMenuText("X/Start:  Option button", 7, 0);
-	drawMenuText("Y/Select: Power button", 8, 0);
-	drawMenuText("DPad:     Joystick", 9, 0);
+void uiAbout(void) { uiAuto(); }
 
-	drawMenuText(gameInfoString, 11, 0);
+void uiDisplay(void) { uiAuto(); }
 
-	drawMenuText("NGPDS        " EMUVERSION, 19, 0);
-	drawMenuText("ARMZ80       " ARMZ80VERSION, 20, 0);
-	drawMenuText("ARMTLCS-900H " TLCS900VERSION, 21, 0);
-	drawMenuText("ARMK2GE      " K2GEVERSION, 22, 0);
-	drawMenuText("ARMSNGG76496 " ARMSNGGVERSION, 23, 0);
-}
+static void uiMachine(void) { uiAuto(); }
 
-void uiDisplay() {
-	setupSubMenuText();
-	drawSubItem("Gamma:", getGammaText());
-	drawSubItem("B&W Palette:", getPaletteText());
-	drawSubItem("VRAM Double Buffer:", autoTxt[gBufferEnable]);
-}
-
-static void uiMachine() {
-	setupSubMenuText();
-	drawSubItem("Language:", langTxt[gLang]);
-	drawSubItem("Machine:", getMachineText());
-	drawSubItem("Change Batteries", NULL);
-	drawSubItem("Change Sub Battery", NULL);
-	drawSubItem("Cpu Speed Hacks:", getSpeedHackText());
-	drawSubItem("Z80 Clock:", cpuSpeedTxt[gZ80Speed&7]);
-	drawSubItem("Select BnW Bios", NULL);
-	drawSubItem("Select Color Bios", NULL);
-}
-
-void checkBattery() {
+void checkBattery(void) {
 	if (oldBattery != batteryLevel) {
 		oldBattery = batteryLevel;
-		if (batteryLevel < 0x8400) {
-			drawText("   Batteries low in the NGP!", 15, 0);
-		}
-		else {
-			drawText("", 15, 0);
-		}
+		if (batteryLevel < 0x8400) infoOutput("NGP battery low.");
 	}
 }
 

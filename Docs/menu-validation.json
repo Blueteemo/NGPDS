@@ -1,0 +1,205 @@
+{
+  "date": "2026-11-09",
+  "baseline": "465dcf8303a3cd625bc79e3669401316dc5aeaee",
+  "nds_sha256": "916aa320a695058269dfb62466cbdf7421f0629dfa1e5de2879a0bccda2e943f",
+  "nds_bytes": 907264,
+  "clean_rebuild_sha256_matches": true,
+  "host_ui_asan_ubsan": "PASS",
+  "host_config": "PASS",
+  "host_persistence_asan_ubsan": "PASS: 60 load and 72 save schedules",
+  "host_legacy_asan_ubsan": "PASS: legacy empty files and 192 ranked-save schedules",
+  "menu_fat_emulator": "PASS: language switching, saved preferences, cold starts, touchscreen and keys",
+  "power_register_tests": [
+    {
+      "case": "power_off",
+      "closed_pm_bits": 12,
+      "open_pm_bits": 12
+    },
+    {
+      "case": "power_on",
+      "closed_pm_bits": 8,
+      "open_pm_bits": 12
+    },
+    {
+      "case": "power_main_bottom",
+      "closed_pm_bits": 4,
+      "open_pm_bits": 12
+    }
+  ],
+  "extra_tests": {
+    "empty_hle_autopause_off_and_step_guard": true,
+    "autopause_off_preserved_with_cartridge": true,
+    "utf8_fat_filename_touch_load_modal_tabs_and_footer_A": true,
+    "old_state_loaded_and_resaved_with_2mib_cure_zh": {
+      "state_bytes": 30256,
+      "old_sha256": "2e56c81662ce34ba637921e7dfa2b96287babdea12fdc72dd98959c9a1b3f53d",
+      "new_sha256": "e113c3b4f2b756016127ac3e6d42be760fe75a6efb78a7b5c1299a25738e9f99",
+      "byte_identical_after_paused_load_save": false,
+      "ui_language_still_japanese": true
+    },
+    "official_8byte_empty_flash_accepted_at_rom_load": true,
+    "nds_sha256": "916aa320a695058269dfb62466cbdf7421f0629dfa1e5de2879a0bccda2e943f"
+  },
+  "game_comparisons": [
+    {
+      "case": "static",
+      "ui_language": "english",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 398
+    },
+    {
+      "case": "static",
+      "ui_language": "chinese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 398
+    },
+    {
+      "case": "static",
+      "ui_language": "japanese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 398
+    },
+    {
+      "case": "single",
+      "ui_language": "english",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 398
+    },
+    {
+      "case": "single",
+      "ui_language": "chinese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 398
+    },
+    {
+      "case": "single",
+      "ui_language": "japanese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 398
+    },
+    {
+      "case": "same_line",
+      "ui_language": "english",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 398
+    },
+    {
+      "case": "same_line",
+      "ui_language": "chinese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 398
+    },
+    {
+      "case": "same_line",
+      "ui_language": "japanese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 398
+    },
+    {
+      "case": "Pure_JP",
+      "ui_language": "english",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1464
+    },
+    {
+      "case": "Pure_JP",
+      "ui_language": "chinese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1464
+    },
+    {
+      "case": "Pure_JP",
+      "ui_language": "japanese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1464
+    },
+    {
+      "case": "Pure_ZH",
+      "ui_language": "english",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1464
+    },
+    {
+      "case": "Pure_ZH",
+      "ui_language": "chinese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1464
+    },
+    {
+      "case": "Pure_ZH",
+      "ui_language": "japanese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1464
+    },
+    {
+      "case": "Cure_JP",
+      "ui_language": "english",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1466
+    },
+    {
+      "case": "Cure_JP",
+      "ui_language": "chinese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1466
+    },
+    {
+      "case": "Cure_JP",
+      "ui_language": "japanese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1466
+    },
+    {
+      "case": "Cure_ZH",
+      "ui_language": "english",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1453
+    },
+    {
+      "case": "Cure_ZH",
+      "ui_language": "chinese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1453
+    },
+    {
+      "case": "Cure_ZH",
+      "ui_language": "japanese",
+      "game_rgb5_different_pixels": 0,
+      "border_rgb5_different_pixels": 0,
+      "guest_frames_at_last_telemetry": 1453
+    }
+  ],
+  "elf_sections": {
+    "text": 845712,
+    "data": 376,
+    "bss": 527272
+  },
+  "historical_graphite_elf_sections": {
+    "text": 212004,
+    "data": 372,
+    "bss": 502168
+  },
+  "physical_hardware": "Not tested for this menu candidate",
+  "audio": "Core unchanged; no new long audio capture",
+  "limitations": "Short emulator cases only; not full-game or real R4 performance acceptance."
+}

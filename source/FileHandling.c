@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "SafeFile.h"
+#include "UiText.h"
 #include "FlashStore.h"
 
 #include "FileHandling.h"
@@ -89,6 +90,7 @@ static bool configWrite(FILE *f,void *unused) {(void)unused;return fwrite(&cfg,1
 
 //---------------------------------------------------------------------------------
 void applyConfigData(void) {
+	gUiLanguage = uiLanguageFromConfig((uint32_t)cfg.unused);
 	emuSettings  = cfg.emuSettings & ~EMUSPEED_MASK;	// Clear speed setting.
 	gGammaValue  = cfg.gammaValue;
 	gLang        = cfg.language;
@@ -103,6 +105,7 @@ void applyConfigData(void) {
 }
 
 void updateConfigData(void) {
+	cfg.unused = (int)uiLanguageToConfig((uint32_t)cfg.unused, gUiLanguage);
 	strcpy(cfg.magic, "cfg");
 	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK;		// Clear speed setting.
 	cfg.gammaValue  = gGammaValue;

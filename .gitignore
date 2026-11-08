@@ -6,3 +6,6 @@ contents.xcworkspacedata
 build
 *.elf
 *.nds
+
+# Losslessly compressed upstream source is tracked instead.
+third_party/fusion-pixel-12px/*.bdf

@@ -6,6 +6,10 @@ NGPDS 是由 **Fredrik Ahlström（FluBBaOfWard）** 开发、运行于 Nintendo
 
 [原项目](https://github.com/FluBBaOfWard/NGPDS) · [保留的上游使用与菜单说明（英文）](Docs/UPSTREAM_README.md)
 
+## 三语菜单测试分支
+
+本分支在联合修复与石墨边框上，加入统一 12px 的英文／简体中文／日文菜单及菜单外关闭副屏选项。见[操作、构建与验证边界](Docs/TRILINGUAL_MENU.md)。这是独立测试候选，未替换默认稳定分支，也未修改上游 PR。
+
 ## 选择分支
 
 | 分支 | 内容 |

@@ -113,6 +113,8 @@ endif
 
 SOURCES_S	+= $(shell find -L $(SOURCEDIRS) -name "*.s")
 SOURCES_C	+= $(shell find -L $(SOURCEDIRS) -name "*.c")
+# The NGPDS menu preserves Shared's interfaces without modifying its submodule.
+SOURCES_C := $(filter-out source/Shared/EmuMenu.c,$(SOURCES_C))
 SOURCES_CPP	+= $(shell find -L $(SOURCEDIRS) -name "*.cpp")
 
 # Compiler and linker flags

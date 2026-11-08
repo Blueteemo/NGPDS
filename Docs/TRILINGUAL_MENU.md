@@ -1,0 +1,53 @@
+# Trilingual menu candidate
+
+This personal-fork branch adds English, Simplified Chinese and Japanese interface languages on top of the accepted combined Pure/Cure build and selected graphite border. It is a **test candidate**, not a new upstream release or a new hardware acceptance result.
+
+## Use
+
+Open the menu with L+R, then choose **Options → Settings → Interface Language**. A cycles English → 简体中文 → 日本語. L/R changes top-level tabs; Left/Right moves five entries; Up/Down selects an item. Touch selects a row, and touching it again activates it. The footer A/B areas also accept touch.
+
+**Menu Screen Off** turns off the unused screen/backlight while the menu is closed and restores it when the menu opens. If the emulator is on the bottom screen, the top screen turns off instead. This reuses the existing power-save option; it does not change the game's brightness or audio. No physical battery-life measurement was made.
+
+With **Autosave Settings** enabled, leaving the menu persists the interface language and other preferences. With it disabled, use **File → Save Settings**. Existing disabled preferences remain disabled. **Autosave Flash** concerns in-game Flash progress; save states remain a separate manual feature. **Console Language** still controls the NGPC's Japanese/English setting independently of the interface.
+
+## Implementation and compatibility
+
+- Native Fusion Pixel 12px for all three languages, with Japanese glyph overrides; Latin advance 6px and CJK advance 12px. No runtime resizing or antialiasing. Retained upstream font sources and licenses are in `third_party/fusion-pixel-12px/`.
+- A five-row, 256×192 menu uses a 24 KiB 4bpp canvas and 768 dirty flags. It reuses VRAM H, uploads changed tiles through CPU stores, and adds no DMA or HBlank handler. A single full presentation copies at most 24 KiB; multiple menu redraws can occur during an input event. This is not a measured per-frame hardware budget.
+- `Menu.c` adapts the existing Shared menu interfaces locally. `Shared/EmuMenu.c` is excluded from this build; no dependency revision or dependency source is changed. Its MIT notice is retained in `Docs/licenses/NDS_Shared-menu.txt`.
+- The existing 792-byte settings layout is unchanged. A tagged value in the previously unused word records the UI language; unknown legacy contents are preserved until a translated UI is selected. `.fla` and `.sta` formats are unchanged. UTF-8 filenames are displayed without translation; unsupported glyphs fall back to `?`.
+- Empty HLE operation now stays idle when no cartridge or real BIOS is loaded, including when Autopause Game is disabled. Debug Step Frame displays a message instead of entering an uninitialized CPU. Inserted cartridges and real-BIOS operation retain the existing path.
+- Rendering, CPU, audio, FlashStore and SafeFile implementations remain byte-for-byte unchanged from the graphite baseline. This does not add an audio-accuracy improvement.
+
+## Build and host tests
+
+Keep the pinned submodules and nested dependencies. With an existing Wonderful/BlocksDS installation:
+
+```sh
+git clone --recursive --branch personal/trilingual-menu https://github.com/Blueteemo/NGPDS.git
+cd NGPDS
+export WONDERFUL_TOOLCHAIN=/path/to/wonderful
+export BLOCKSDS="$WONDERFUL_TOOLCHAIN/thirdparty/blocksds/core"
+export BLOCKSDSEXT="$WONDERFUL_TOOLCHAIN/thirdparty/blocksds/external"
+make -j8 COMPDB=0
+python3 tests/run_ui_tests.py --sanitize
+python3 tests/test_config.py
+```
+
+Committed font binaries make normal builds independent of Python or network access. `python3 tools/build_ui_font.py` regenerates them from the retained compressed BDF sources. Host UI tests need only a C compiler and Python 3; no ROM, BIOS or NDS SDK. Persistence tests are unchanged and remain in `tests/`.
+
+## Validation scope
+
+The local candidate passed strict UTF-8/configuration/canvas host tests, ASan/UBSan save tests, actual FAT-image language save/cold restore, touchscreen and key navigation, modal browser tabs, UTF-8 filenames, both display orientations and the existing power-save flag. An old graphite-build state for a 2 MiB Cure translation was loaded and resaved; the resaved state has the same length, **not identical bytes**. A valid eight-byte empty Flash file was accepted.
+
+Seven short paired cases (three original scroll diagnostics and Pure/Cure JP/ZH) were run against the graphite baseline in all three UI languages. The selected final frames had zero differing RGB5 game and border pixels in 21 comparisons. These are bounded emulator checks, not a full-game replay or renewed long audio/performance acceptance.
+
+The enlarged executable/font data still allowed the existing 2 MiB + 4 KiB ROM allocation in ordinary DS-mode simulation. Physical R4 timing, SD behavior, battery savings and multilingual readability on the actual LCD remain unverified for this candidate. Earlier hardware feedback concerns the pre-menu optimized graphics build only.
+
+## Actual emulator captures
+
+| English | 简体中文 | 日本語 |
+| --- | --- | --- |
+| ![English](images/menu-english.png) | ![简体中文](images/menu-chinese.png) | ![日本語](images/menu-japanese.png) |
+
+[Machine-readable validation summary](menu-validation.json) records the tested binary hash, memory sections and comparison results.

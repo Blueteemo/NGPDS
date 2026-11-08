@@ -6,6 +6,10 @@ NGPDS is a Neo Geo Pocket / Neo Geo Pocket Color emulator for Nintendo DS-family
 
 [Original project](https://github.com/FluBBaOfWard/NGPDS) · [Original usage and menu documentation](Docs/UPSTREAM_README.md)
 
+## Menu test branch
+
+This branch adds a native 12px English / 简体中文 / 日本語 interface and an optional unused-screen power switch on top of the combined fixes and graphite border. See [controls, building and verification limits](Docs/TRILINGUAL_MENU.md). It is a separate test candidate; the default stable branch and upstream proposals are unchanged.
+
 ## Choose a branch
 
 | Branch | Contents |
