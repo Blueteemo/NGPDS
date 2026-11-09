@@ -130,7 +130,11 @@ void uiAuto(void) {
 void setupMenu(void) {
 	const Menu *menu = menus[selectedMenu];
 	int pages = (menu->itemCount + UI_PAGE_ROWS - 1) / UI_PAGE_ROWS;
-	uiHeader(menu->header, selectedMain, selected / UI_PAGE_ROWS + 1, pages ? pages : 1);
+	uiHeader(selectedMenu >= 1 && selectedMenu <= 3 ? "" : menu->header,
+		selectedMain, selected / UI_PAGE_ROWS + 1, pages ? pages : 1);
+	int visibleRows = menu->itemCount - (selected / UI_PAGE_ROWS) * UI_PAGE_ROWS;
+	if (visibleRows > UI_PAGE_ROWS) visibleRows = UI_PAGE_ROWS;
+	uiListEdges(visibleRows);
 	uiFooter(selectedMenu >= 4 && selectedMenu <= 8);
 	menuItemRow = 0;
 }
@@ -347,15 +351,17 @@ int getInput(void) {
 				pendingMainTab = tab;
 				keyHit |= KEY_B;
 			}
-		} else if (touch.py >= 48 && touch.py < 168 && touch.px >= 8 && touch.px < 248) {
-			int item = browserFirst + (touch.py - 48) / 24;
+		} else if (touch.py >= uiRowsTop() &&
+			touch.py < uiRowsTop() + UI_PAGE_ROWS * UI_ROW_HEIGHT &&
+			touch.px >= 8 && touch.px < 248) {
+			int item = browserFirst + (touch.py - uiRowsTop()) / UI_ROW_HEIGHT;
 			if (item < browserItems) {
 				if (item == browserSelected) keyHit |= KEY_A;
 				else pendingBrowserSelection = item;
 			}
 		} else if (touch.py >= 168) {
-			if (touch.px >= 8 && touch.px < 72) keyHit |= KEY_A;
-			else if (touch.px >= 72 && touch.px < 160) keyHit |= KEY_B;
+			if (touch.px >= 8 && touch.px < 88) keyHit |= KEY_A;
+			else if (touch.px >= 88 && touch.px < 168) keyHit |= KEY_B;
 		}
 	}
 	return keyHit;
@@ -391,15 +397,17 @@ int getMenuTouch(int *keyHit, int sel, int itemCount) {
 		setSelectedMain((touch.px - 8) / 80 + 1);
 		return 0;
 	}
-	if (touch.py >= 48 && touch.py < 168 && touch.px >= 8 && touch.px < 248) {
-		int item = menuYOffset + (touch.py - 48) / 24;
+	if (touch.py >= uiRowsTop() &&
+		touch.py < uiRowsTop() + UI_PAGE_ROWS * UI_ROW_HEIGHT &&
+		touch.px >= 8 && touch.px < 248) {
+		int item = menuYOffset + (touch.py - uiRowsTop()) / UI_ROW_HEIGHT;
 		if (item < itemCount) {
 			if (sel == item) *keyHit |= KEY_A;
 			else sel = item;
 		}
 	} else if (touch.py >= 168) {
-		if (touch.px >= 8 && touch.px < 72) *keyHit |= KEY_A;
-		else if (touch.px >= 72 && touch.px < 160) *keyHit |= KEY_B;
+		if (touch.px >= 8 && touch.px < 88) *keyHit |= KEY_A;
+		else if (touch.px >= 88 && touch.px < 168) *keyHit |= KEY_B;
 	}
 	return sel;
 }
@@ -458,7 +466,7 @@ void drawLongFilename(char **entries, int item, int row) {
 	if (offset == oldNameOffset) return;
 	oldNameOffset = offset;
 	while (offset-- > 0 && *name) uiNextCodepoint(&name);
-	int y = UI_ROW_TOP + row * UI_ROW_HEIGHT;
+	int y = uiRowsTop() + row * UI_ROW_HEIGHT;
 	uiFillRect(16, y + 5, 224, 14, UI_ACTIVE);
 	uiText(name, 16, y + 16, UI_INK, 240);
 	uiCanvasPresent();

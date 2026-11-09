@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-10",
+  "baseline": "77165e5b97a39bcf01a0cb481fefe1077b064758",
+  "nds_sha256": "0d498be3bfc3c0e1a6b98769a495e9e62fb1ccc7b9a3a47eb3c19d520b0518ef",
+  "nds_bytes": 908288,
+  "host_ui_asan_ubsan": "PASS: root/subheader, no 1/1, five-row-only hairlines, footer centering in 3 locales",
+  "one_to_four_item_hairline_noop_cases": 30,
+  "five_item_hairline_boundary_cases": 15,
+  "layout_touch_languages": [
+    0,
+    1,
+    2
+  ],
+  "layout_touch_assertions_per_language": [
+    14,
+    14,
+    14
+  ],
+  "visible_root_bounds_first_and_last": [
+    36,
+    155
+  ],
+  "footer_centers": [
+    48,
+    128,
+    208
+  ],
+  "footer_A_touch_x": [
+    8,
+    88
+  ],
+  "footer_B_touch_x": [
+    88,
+    168
+  ],
+  "rows_top_root": 36,
+  "rows_top_submenu_browser": 48,
+  "game_audio_cases": [
+    {
+      "case": "Pure_JP",
+      "rgb5_changed_pixels_vs_previous_menu_build": 0,
+      "audio_samples_after_5s": 2408364,
+      "audio_nonzero_after_5s": 978694,
+      "rms_after_5s": 2943.939608155814,
+      "peak_after_5s": 30560
+    },
+    {
+      "case": "Pure_ZH",
+      "rgb5_changed_pixels_vs_previous_menu_build": 0,
+      "audio_samples_after_5s": 2408364,
+      "audio_nonzero_after_5s": 978694,
+      "rms_after_5s": 2943.939608155814,
+      "peak_after_5s": 30560
+    },
+    {
+      "case": "Cure_JP",
+      "rgb5_changed_pixels_vs_previous_menu_build": 0,
+      "audio_samples_after_5s": 2408364,
+      "audio_nonzero_after_5s": 2111314,
+      "rms_after_5s": 3087.42134024057,
+      "peak_after_5s": 32767
+    },
+    {
+      "case": "Cure_ZH",
+      "rgb5_changed_pixels_vs_previous_menu_build": 0,
+      "audio_samples_after_5s": 2408364,
+      "audio_nonzero_after_5s": 2111214,
+      "rms_after_5s": 3139.4073828599335,
+      "peak_after_5s": 32767
+    }
+  ],
+  "startup_audio": {
+    "program_sha256": "0d498be3bfc3c0e1a6b98769a495e9e62fb1ccc7b9a3a47eb3c19d520b0518ef",
+    "frames": 300,
+    "pcm_frames": 240695,
+    "peak": 513,
+    "mean": [
+      -69.70321776522155,
+      -69.70321776522155
+    ],
+    "rms": 187.46106649383614,
+    "max_sample_step": 2,
+    "nonzero_frames": 36250,
+    "first_active_frame": 2632,
+    "first_active_seconds": 0.05483333333333333,
+    "capture_rate": 48000
+  },
+  "legacy_state": {
+    "state_bytes": 30256,
+    "old_sha256": "2e56c81662ce34ba637921e7dfa2b96287babdea12fdc72dd98959c9a1b3f53d",
+    "new_sha256": "915d7d5877910fafc16a328c4bba009af8bd3d5dbe2de25e8b011b99e65c5fa7",
+    "byte_identical_after_paused_load_save": false,
+    "ui_language_still_japanese": true
+  },
+  "settings_input_power": "PASS: actual FAT-image tests",
+  "clean_rebuild_matches": true,
+  "warnings": "Six inherited, none new",
+  "audio_core_and_soft_start_sources_unchanged": true,
+  "no_new_hardware_acceptance": true,
+  "elf_sections": {
+    "text": 846776,
+    "data": 384,
+    "bss": 527256
+  }
+}

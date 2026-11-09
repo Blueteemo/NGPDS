@@ -19,6 +19,8 @@ int uiTextWidth(const char *text);
 void uiText(const char *text, int x, int baseline, unsigned color, int right);
 void uiTextEllipsis(const char *text, int x, int baseline, unsigned color, int right);
 void uiHeader(const char *title, int activeTab, int page, int pages);
+int uiRowsTop(void);
+void uiListEdges(int visibleRows);
 void uiFooter(bool changing);
 void uiDrawEntry(const char *label, const char *value, int slot, bool selected);
 void uiDrawFileEntry(const char *name, int slot, bool selected);

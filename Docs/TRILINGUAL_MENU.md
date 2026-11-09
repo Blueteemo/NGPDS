@@ -90,3 +90,7 @@ Emulator checks observe both EMUinput and the hardware joypad byte at `systemMem
 ## Subsequent startup-audio candidate
 
 A launch-only soft start is documented separately in [STARTUP_AUDIO.md](STARTUP_AUDIO.md), with its exact binary and fresh audio regressions. The earlier menu-validation JSON retains the hash and scope of the preceding UI build. The proposed menu hierarchy mockups are not implemented in this audio candidate.
+
+## Approved menu hierarchy and footer
+
+The formerly separate preview is now implemented: [layout, touch behavior and validation](MENU_LAYOUT.md). It uses thin list edges rather than a filled panel, hides repeated top-level titles and single-page counters, and centers footer hints in three columns. The older menu-validation JSON remains evidence for its own binary.

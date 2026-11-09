@@ -73,8 +73,52 @@ int main(void) {
 	gUiLanguage=UI_LANGUAGE_ENGLISH;
 	uiCanvasClear(0);uiDrawFileEntry("Settings",0,false);
 	assert(!memcmp(chinese,uiCanvasPixels(),sizeof(chinese)));
+	/* Top-level pages have no repeated heading; submenus keep their context. */
+	uiHeader("", 3, 1, 1);
+	assert(uiRowsTop() == 36);
+	for(int y=24;y<36;y++)for(int x=0;x<256;x++)assert(getPixel(x,y)==UI_BG);
+	uint32_t withoutEdges[768*8];
+	for(unsigned language=0;language<UI_LANGUAGE_COUNT;language++) {
+		gUiLanguage=language;
+		for(int count=1;count<=5;count++)for(int selected=0;selected<count;selected++) {
+			uiHeader("", 3, 1, 1);
+			for(int i=0;i<count;i++)uiDrawEntry("Settings",NULL,i,i==selected);
+			memcpy(withoutEdges,uiCanvasPixels(),sizeof(withoutEdges));
+			uiHeader("", 3, 1, 1);uiListEdges(count);
+			for(int i=0;i<count;i++)uiDrawEntry("Settings",NULL,i,i==selected);
+			if(count<5)assert(!memcmp(withoutEdges,uiCanvasPixels(),sizeof(withoutEdges)));
+			else {
+				for(int y=24;y<168;y++)for(int x=8;x<248;x++) {
+					unsigned tile=(y/8)*32+x/8;
+					unsigned before=(withoutEdges[tile*8+(y&7)]>>((x&7)*4))&15;
+					if(getPixel(x,y)!=before)assert((y==36||y==155)&&x>=16&&x<240);
+				}
+				assert(getPixel(128,36)!=UI_BG&&getPixel(128,155)!=UI_BG);
+			}
+		}
+		uiHeader("Settings",2,1,1);assert(uiRowsTop()==48);
+		for(int y=24;y<48;y++)for(int x=200;x<240;x++)assert(getPixel(x,y)==UI_BG);
+		for(int y=24;y<48;y++)for(int x=0;x<16;x++)assert(getPixel(x,y)==UI_BG);
+		uiHeader("",1,2,2);assert(uiRowsTop()==36);
+		uiHeader("/",1,1,1);assert(uiRowsTop()==48);
+	}
+	for(unsigned language=0;language<UI_LANGUAGE_COUNT;language++) {
+		gUiLanguage=language;
+		for(int changing=0;changing<2;changing++) {
+			uiCanvasClear(UI_BG);uiFooter(changing);
+			for(int group=0;group<3;group++) {
+				int lo=256,hi=-1;
+				for(int y=173;y<186;y++)for(int x=8+group*80;x<88+group*80;x++) {
+					if(getPixel(x,y)==UI_SECONDARY){if(x<lo)lo=x;if(x>hi)hi=x;}
+				}
+				assert(hi>=lo);
+				int delta=lo+hi+1-2*(48+group*80);
+				assert(delta>=-4&&delta<=4);
+			}
+		}
+	}
 	char longText[300];memset(longText,'W',299);longText[299]=0;
 	uiTextEllipsis(longText,16,64,UI_INK,240);
-	puts("PASS 12px canvas: clipping, dirty tiles, native advances, Japanese variants, raw filenames, three-locale layout and footer margin");
+	puts("PASS 12px canvas: clipping, dirty tiles, native advances, Japanese variants, raw filenames, three-locale layout, hierarchy, sparse-page preservation, five-row hairlines, centered footer columns and footer margin");
 	return 0;
 }

@@ -8,6 +8,7 @@
 /* 768 4bpp tiles: 24 KiB. The tile map starts at byte 0x6000 in VRAM H. */
 static uint32_t pixels[768 * 8];
 static uint8_t dirty[768];
+static int rowsTop = UI_ROW_TOP;
 
 const uint32_t *uiCanvasPixels(void) { return pixels; }
 uint8_t *uiCanvasDirty(void) { return dirty; }
@@ -126,36 +127,59 @@ void uiTextEllipsis(const char *text, int x, int baseline, unsigned color, int r
 }
 
 void uiHeader(const char *title, int activeTab, int page, int pages) {
+	bool root = !title || !*title;
+	rowsTop = root ? 36 : UI_ROW_TOP;
 	uiCanvasClear(UI_BG);
 	uiFillRect(0, 0, 256, 24, UI_TOP);
 	uiFillRect(0, 23, 256, 1, UI_RULE);
 	static const char *const tabs[] = {"File", "Options", "About"};
 	for (int i = 0; i < 3; i++) {
 		const char *label = uiTranslate(tabs[i]);
+		char caption[80];
+		if (root && pages > 1 && activeTab == i + 1) {
+			snprintf(caption, sizeof(caption), "%s %d/%d", label, page, pages);
+			label = caption;
+		}
 		int left = 8 + i * 80;
 		if (activeTab == i + 1) uiRoundRect(left + 2, 2, 76, 20, UI_ACTIVE);
 		uiText(label, left + 40 - uiTextWidth(label) / 2, 16,
 			activeTab == i + 1 ? UI_INK : UI_SECONDARY, left + 78);
 	}
+	if (root) return;
 	char number[16];
-	snprintf(number, sizeof(number), "%d/%d", page, pages);
-	int numberLeft = 244 - uiTextWidth(number);
-	uiTextEllipsis(uiTranslate(title), 12, 40, UI_INK, numberLeft - 8);
-	uiText(number, numberLeft, 40, UI_SECONDARY, 244);
+	if (pages > 1) snprintf(number, sizeof(number), "%d/%d", page, pages);
+	else number[0] = 0;
+	int numberLeft = 240 - uiTextWidth(number);
+	uiTextEllipsis(uiTranslate(title), 16, 40, UI_INK,
+		pages > 1 ? numberLeft - 8 : 240);
+	uiText(number, numberLeft, 40, UI_SECONDARY, 240);
+}
+
+int uiRowsTop(void) { return rowsTop; }
+
+void uiListEdges(int visibleRows) {
+	if (rowsTop != 36 || visibleRows != UI_PAGE_ROWS) return;
+	uiFillRect(16, rowsTop, 224, 1, UI_TOP);
+	uiFillRect(16, rowsTop + UI_PAGE_ROWS * UI_ROW_HEIGHT - 1, 224, 1, UI_TOP);
 }
 
 void uiFooter(bool changing) {
 	uiFillRect(0, 168, 256, 24, UI_BG);
 	uiFillRect(8, 168, 240, 1, UI_RULE);
-	uiText(uiTranslate(changing ? "A Change" : "A Select"), 12, 183, UI_SECONDARY, 80);
-	uiText(uiTranslate("B Back"), 88, 183, UI_SECONDARY, 160);
-	const char *hint = uiTranslate("L/R Tabs");
-	uiText(hint, 244 - uiTextWidth(hint), 183, UI_SECONDARY, 244);
+	const char *labels[] = {
+		uiTranslate(changing ? "A Change" : "A Select"),
+		uiTranslate("B Back"), uiTranslate("L/R Tabs")
+	};
+	for (int i = 0; i < 3; i++) {
+		int center = 48 + i * 80;
+		uiText(labels[i], center - uiTextWidth(labels[i]) / 2, 183,
+			UI_SECONDARY, center + 38);
+	}
 }
 
 static void drawEntry(const char *label, const char *value, int slot, bool selected, bool translate) {
 	if (slot < 0 || slot >= UI_PAGE_ROWS) return;
-	int y = UI_ROW_TOP + slot * UI_ROW_HEIGHT;
+	int y = rowsTop + slot * UI_ROW_HEIGHT;
 	if (selected) uiRoundRect(8, y, 240, 24, UI_ACTIVE);
 	else if (slot < UI_PAGE_ROWS - 1) uiFillRect(16, y + 23, 224, 1, UI_TOP);
 	char caption[256];
