@@ -1,0 +1,136 @@
+{
+  "date": "2026-11-09",
+  "nds_sha256": "0918fb1b32c1892893874347d42c9d553d973dedd7a66de3461bc8cdb2436d2e",
+  "nds_bytes": 908288,
+  "ramp_frames": 32768,
+  "stream_rate": 48000,
+  "ramp_seconds": 0.6826666666666666,
+  "before": {
+    "official": {
+      "program_sha256": "af2ed33f28a0b0f4d27d31e3084f1932c7b5e4c86b84521cac0d29ef059a24dd",
+      "frames": 300,
+      "pcm_frames": 240695,
+      "peak": 32661,
+      "mean": [
+        -69.70321776522155,
+        -69.70321776522155
+      ],
+      "rms": 1068.455183094566,
+      "max_sample_step": 20040,
+      "nonzero_frames": 5622,
+      "first_active_frame": 2052,
+      "first_active_seconds": 0.04275,
+      "capture_rate": 48000
+    },
+    "graphite": {
+      "program_sha256": "0e05a3d3d1871d4480c39067bb16e6585f748e5fa289d29628af9d88f4d339da",
+      "frames": 300,
+      "pcm_frames": 240695,
+      "peak": 32768,
+      "mean": [
+        -69.70321776522155,
+        -69.70321776522155
+      ],
+      "rms": 1068.4408562655299,
+      "max_sample_step": 19802,
+      "nonzero_frames": 5621,
+      "first_active_frame": 2582,
+      "first_active_seconds": 0.05379166666666667,
+      "capture_rate": 48000
+    },
+    "current": {
+      "program_sha256": "823ca5cabc2bd2ddda4548083556e5806ddd325a5df6623ca5c8f598e0ac0638",
+      "frames": 300,
+      "pcm_frames": 240695,
+      "peak": 32479,
+      "mean": [
+        -69.70321776522155,
+        -69.70321776522155
+      ],
+      "rms": 1068.4551102327703,
+      "max_sample_step": 17154,
+      "nonzero_frames": 5622,
+      "first_active_frame": 2633,
+      "first_active_seconds": 0.05485416666666667,
+      "capture_rate": 48000
+    }
+  },
+  "after": {
+    "program_sha256": "0918fb1b32c1892893874347d42c9d553d973dedd7a66de3461bc8cdb2436d2e",
+    "frames": 300,
+    "pcm_frames": 240695,
+    "peak": 513,
+    "mean": [
+      -69.70321776522155,
+      -69.70321776522155
+    ],
+    "rms": 187.46119953622588,
+    "max_sample_step": 2,
+    "nonzero_frames": 36250,
+    "first_active_frame": 2633,
+    "first_active_seconds": 0.05485416666666667,
+    "capture_rate": 48000
+  },
+  "peak_reduction_db_vs_previous_menu": 36.02970568231908,
+  "unit_callback_cases": 35,
+  "post_ramp_pcm_and_psg_state_identical": true,
+  "buffer_guards_and_filled_lengths": "PASS",
+  "median_extra_bus_ticks_per_post_ramp_callback": 14,
+  "timing_scope": "Emulated ARM9 timer0/1 bus ticks; not physical DS performance.",
+  "games": [
+    {
+      "case": "Pure_JP",
+      "rgb5_changed_pixels_vs_previous_menu_build": 0,
+      "audio_samples_after_5s": 2408364,
+      "audio_nonzero_after_5s": 978682,
+      "rms_after_5s": 2935.5456755711407,
+      "peak_after_5s": 30350
+    },
+    {
+      "case": "Pure_ZH",
+      "rgb5_changed_pixels_vs_previous_menu_build": 0,
+      "audio_samples_after_5s": 2408364,
+      "audio_nonzero_after_5s": 978682,
+      "rms_after_5s": 2935.5456755711407,
+      "peak_after_5s": 30350
+    },
+    {
+      "case": "Cure_JP",
+      "rgb5_changed_pixels_vs_previous_menu_build": 0,
+      "audio_samples_after_5s": 2408364,
+      "audio_nonzero_after_5s": 2111312,
+      "rms_after_5s": 3087.351347440269,
+      "peak_after_5s": 32767
+    },
+    {
+      "case": "Cure_ZH",
+      "rgb5_changed_pixels_vs_previous_menu_build": 0,
+      "audio_samples_after_5s": 2408364,
+      "audio_nonzero_after_5s": 2111174,
+      "rms_after_5s": 3137.5908171617793,
+      "peak_after_5s": 32767
+    }
+  ],
+  "input_and_status_regression": "PASS: four pause/mapping combinations, silent loads and preserved error messages",
+  "legacy_state_regression": {
+    "state_bytes": 30256,
+    "old_sha256": "2e56c81662ce34ba637921e7dfa2b96287babdea12fdc72dd98959c9a1b3f53d",
+    "new_sha256": "76253fae5bad7850a075d0b4412d5210b8038da5e80f9f9af23efd7a381bb70a",
+    "byte_identical_after_paused_load_save": false,
+    "ui_language_still_japanese": true
+  },
+  "new_physical_hardware_test": false,
+  "clean_rebuild_matches": true,
+  "baseline_source_unchanged": [
+    "Sound.s",
+    "Menu.c",
+    "FileHandling.c",
+    "FlashStore.c",
+    "SafeFile.c",
+    "cpu.s",
+    "RasterSprites.c",
+    "RasterPalette.c",
+    "Gfx.s"
+  ],
+  "warnings": "Six inherited build warnings, no new StartupAudio warning. Earlier reports saying five omitted updateGameInfo unused after the About cleanup."
+}

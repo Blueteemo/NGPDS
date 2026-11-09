@@ -86,3 +86,7 @@ python3 tests/test_config.py
 ```
 
 Emulator checks observe both EMUinput and the hardware joypad byte at `systemMemory + 0xB0` in NGPDS. In all four Autopause on/off × A/B mapping combinations, the dismissal press and continued hold produce no game action; a fresh press after release produces the expected mapped button. Isolated FAT tests cover silent automatic Flash loading, confirmed manual loading, and visible corrupt-save rejection. Prior startup-B, language/power/state tests and 21 selected RGB5 game comparisons were repeated. This remains automated acceptance, without new physical console validation.
+
+## Subsequent startup-audio candidate
+
+A launch-only soft start is documented separately in [STARTUP_AUDIO.md](STARTUP_AUDIO.md), with its exact binary and fresh audio regressions. The earlier menu-validation JSON retains the hash and scope of the preceding UI build. The proposed menu hierarchy mockups are not implemented in this audio candidate.
