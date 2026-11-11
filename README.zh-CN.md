@@ -4,7 +4,7 @@
 
 NGPDS 是 **Fredrik Ahlström（FluBBaOfWard）** 开发的 Neo Geo Pocket／Neo Geo Pocket Color 模拟器，运行于 Nintendo DS 系列设备。Fusion Edition 是千岚之夏维护的非官方分支。
 
-当前验收构建在「关于」中显示 **V0.1.0 · 2026-11-11**。
+当前验收构建在「关于」中显示 `V0.1.0 2026-11-11`。
 
 [原项目](https://github.com/FluBBaOfWard/NGPDS) · [原版使用说明](Docs/UPSTREAM_README.md) · [早期联合修复分支](https://github.com/Blueteemo/NGPDS/tree/personal/combined-stable)
 

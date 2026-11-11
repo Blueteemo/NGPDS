@@ -38,6 +38,16 @@ python3 tests/test_config.py
 
 Committed font binaries make normal builds independent of Python or network access. `python3 tools/build_ui_font.py` regenerates them from the retained compressed BDF sources. Host UI tests need only a C compiler and Python 3; no ROM, BIOS or NDS SDK. Persistence tests are unchanged and remain in `tests/`.
 
+## Fusion Edition V0.1.0 build verification
+
+The tested build dated 2026-11-11 used source commit `d03e063b7efc8df1f264e570e9aa9e6b748fb8ad`. A clean build with the pinned recursive submodules matched the executable tested on NDSi + R4 byte for byte.
+
+```text
+1fdacecdb8d2236bddafd131a065c16ca052c29fd9bb38e2c82b5f290f60f629  NGPDS.nds
+```
+
+The clean checkout passed the host UI, menu input release, config loading and startup audio tests. The user's device feedback covers this menu build and does not add a new SD power-loss or full-game compatibility test.
+
 ## Initial language candidate validation
 
 The local candidate passed strict UTF-8/configuration/canvas host tests, ASan/UBSan save tests, actual FAT-image language save/cold restore, touchscreen and key navigation, modal browser tabs, UTF-8 filenames, both display orientations and the existing power-save flag. An old graphite-build state for a 2 MiB Cure translation was loaded and resaved; the resaved state has the same length, **not identical bytes**. A valid eight-byte empty Flash file was accepted.

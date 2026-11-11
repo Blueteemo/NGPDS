@@ -4,7 +4,7 @@
 
 Fusion Edition is Blueteemo's unofficial maintenance fork of NGPDS, the Neo Geo Pocket and Neo Geo Pocket Color emulator for Nintendo DS-family systems created by **Fredrik Ahlström (FluBBaOfWard)**.
 
-The current tested build identifies itself as **V0.1.0 · 2026-11-11** in About.
+The current tested build identifies itself as `V0.1.0 2026-11-11` in About.
 
 [Original project](https://github.com/FluBBaOfWard/NGPDS) · [Original user guide](Docs/UPSTREAM_README.md) · [Earlier combined baseline](https://github.com/Blueteemo/NGPDS/tree/personal/combined-stable)
 
