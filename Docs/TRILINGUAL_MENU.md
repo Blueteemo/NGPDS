@@ -1,10 +1,12 @@
-# Trilingual menu candidate
+# Trilingual menu implementation and test history
 
-This personal-fork branch adds English, Simplified Chinese and Japanese interface languages on top of the accepted combined Pure/Cure build and selected graphite border. It is a **test candidate**, not a new upstream release or a new hardware acceptance result.
+Fusion Edition adds English, Simplified Chinese and Japanese menus to the combined Pure/Cure build. The [main README](../README.md) describes the current build and hardware feedback. The captures and numerical results below record the earlier builds identified in each section.
 
 ## Use
 
-Open the menu with L+R, then choose **Options → Settings → Interface Language**. A cycles English → 简体中文 → 日本語. L/R changes top-level tabs; Left/Right moves five entries; Up/Down selects an item. Touch selects a row, and touching it again activates it. The footer A/B areas also accept touch.
+Open the menu with L+R, then choose **Options → General → Interface Language**. A cycles English → 简体中文 → 日本語. With menu buttons active, L/R changes the top-level tabs and Up/Down selects a row. Left/Right changes the current editable setting in settings submenus and moves by a page in other lists. Touch selects a row, and touching it again activates it. The footer's select and back areas also accept touch.
+
+When **Autopause Game** is off, **Game Control in Menu** becomes available. It defaults to off, so physical buttons still operate the menu while the game runs. When enabled with a loaded ROM, physical buttons go to the game and touch operates the menu. Multipage touch-only menus expose **Next page**, which cycles to the first page after the last. Without a ROM, physical buttons can still operate the menu and file picker.
 
 **Menu Screen Off** turns off the unused screen/backlight while the menu is closed and restores it when the menu opens. If the emulator is on the bottom screen, the top screen turns off instead. This reuses the existing power-save option; it does not change the game's brightness or audio. No physical battery-life measurement was made.
 
@@ -17,7 +19,7 @@ With **Autosave Settings** enabled, leaving the menu persists the interface lang
 - `Menu.c` adapts the existing Shared menu interfaces locally. `Shared/EmuMenu.c` is excluded from this build; no dependency revision or dependency source is changed. Its MIT notice is retained in `Docs/licenses/NDS_Shared-menu.txt`.
 - The existing 792-byte settings layout is unchanged. A tagged value in the previously unused word records the UI language; unknown legacy contents are preserved until a translated UI is selected. `.fla` and `.sta` formats are unchanged. UTF-8 filenames are displayed without translation; unsupported glyphs fall back to `?`.
 - Empty HLE operation now stays idle when no cartridge or BIOS for the active machine is loaded, including when Autopause Game is disabled. Debug Step Frame displays a message instead of entering an uninitialized CPU. Inserted cartridges and matching real-BIOS operation retain the existing path. A Color BIOS does not make an empty monochrome HLE console runnable.
-- Rendering, CPU, audio, FlashStore and SafeFile implementations remain byte-for-byte unchanged from the graphite baseline. This does not add an audio-accuracy improvement.
+- The initial language candidate retained the graphite baseline's rendering, CPU, audio, FlashStore and SafeFile implementations. Subsequent candidates added the launch fade and display options listed in the [main README](../README.md).
 
 ## Build and host tests
 
@@ -36,7 +38,7 @@ python3 tests/test_config.py
 
 Committed font binaries make normal builds independent of Python or network access. `python3 tools/build_ui_font.py` regenerates them from the retained compressed BDF sources. Host UI tests need only a C compiler and Python 3; no ROM, BIOS or NDS SDK. Persistence tests are unchanged and remain in `tests/`.
 
-## Validation scope
+## Initial language candidate validation
 
 The local candidate passed strict UTF-8/configuration/canvas host tests, ASan/UBSan save tests, actual FAT-image language save/cold restore, touchscreen and key navigation, modal browser tabs, UTF-8 filenames, both display orientations and the existing power-save flag. An old graphite-build state for a 2 MiB Cure translation was loaded and resaved; the resaved state has the same length, **not identical bytes**. A valid eight-byte empty Flash file was accepted.
 
