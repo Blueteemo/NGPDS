@@ -23,6 +23,7 @@ void gfxInit(void);
 void vblIrqHandler(void);
 void monoPalInit(int palBank);
 void paletteInit(u8 gammaVal);
+unsigned getColorMode(void);
 void paletteTxAll(void);
 void refreshGfx(void);
 

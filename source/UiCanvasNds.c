@@ -2,11 +2,12 @@
 #include "UiCanvas.h"
 
 void uiCanvasPalette(void) {
-	static const uint8_t colors[8][3] = {
+	static const uint8_t colors[][3] = {
 		{16,24,24}, {24,32,32}, {40,48,48}, {40,56,64},
-		{232,240,240}, {152,168,168}, {144,208,208}, {248,176,96}
+		{232,240,240}, {152,168,168}, {144,208,208}, {248,176,96},
+		[UI_SUBTITLE] = {176,192,192}
 	};
-	for (unsigned i = 0; i < 8; i++) {
+	for (unsigned i = 0; i < sizeof(colors) / sizeof(colors[0]); i++) {
 		BG_PALETTE_SUB[i] = RGB15(colors[i][0] >> 3, colors[i][1] >> 3, colors[i][2] >> 3);
 	}
 }

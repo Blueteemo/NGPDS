@@ -10,7 +10,11 @@
 #define UI_ROW_HEIGHT 24
 
 enum UiColor {
-	UI_BG, UI_TOP, UI_RULE, UI_ACTIVE, UI_INK, UI_SECONDARY, UI_VALUE, UI_WARNING
+	UI_BG, UI_TOP, UI_RULE, UI_ACTIVE, UI_INK, UI_SECONDARY, UI_VALUE, UI_WARNING,
+	UI_SUBTITLE
+};
+enum UiFooterAction {
+	UI_FOOTER_NONE, UI_FOOTER_ACCEPT, UI_FOOTER_BACK, UI_FOOTER_NEXT
 };
 void uiCanvasClear(unsigned color);
 void uiFillRect(int x, int y, int width, int height, unsigned color);
@@ -18,10 +22,12 @@ void uiRoundRect(int x, int y, int width, int height, unsigned color);
 int uiTextWidth(const char *text);
 void uiText(const char *text, int x, int baseline, unsigned color, int right);
 void uiTextEllipsis(const char *text, int x, int baseline, unsigned color, int right);
+void uiIdleScreen(void);
 void uiHeader(const char *title, int activeTab, int page, int pages);
 int uiRowsTop(void);
 void uiListEdges(int visibleRows);
-void uiFooter(bool changing);
+void uiFooter(bool changing, bool touchOnly, bool multiplePages);
+enum UiFooterAction uiFooterHit(int x, bool touchOnly, bool multiplePages);
 void uiDrawEntry(const char *label, const char *value, int slot, bool selected);
 void uiDrawFileEntry(const char *name, int slot, bool selected);
 const uint32_t *uiCanvasPixels(void);

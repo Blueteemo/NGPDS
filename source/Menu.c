@@ -26,14 +26,13 @@
 
 #define MENU_MAX_DEPTH (8)
 
-extern const Menu *const menus[];
-
 static void exitUI(void);
 static void drawClock(void);
 static void setSelectedMenu(int menuNr);
 static void setSelectedMain(int menuNr);
 static void nullUI(void);
 static void subUI(void);
+static bool isSettingsMenu(void);
 
 const char *const autoTxt[]  = {"Off", "On", "With R"};
 const char *const brighTxt[] = {"I", "II", "III", "IIII", "IIIII"};
@@ -72,6 +71,16 @@ static u32 filterMenuRelease(u32 held) {
 	menuReleaseMask &= held;
 	return held & ~menuReleaseMask;
 }
+
+static bool menuUsesPhysicalKeys(void) {
+	return !gameInserted || (emuSettings & AUTOPAUSE_EMULATION) ||
+		!(emuSettings & GAME_INPUT_IN_MENU);
+}
+
+static int nextMenuPage(int item, int count) {
+	int next = (item / UI_PAGE_ROWS + 1) * UI_PAGE_ROWS;
+	return next < count ? next : 0;
+}
 // How deep we are in the menu tree
 static int menuLevel = 0;
 static char menuPath[MENU_MAX_DEPTH];
@@ -98,28 +107,17 @@ void guiRunLoop(void) {
 		subUI();
 	}
 	updateTime();
-	/* Honor the user's pause preference once a cartridge/real BIOS exists;
-	 * an empty HLE console has no standalone CPU program to execute. */
-	if (!hasConsoleProgram() && !pauseEmulation) {
-		pauseEmulation = true;
-		soundSetMuteGUI();
-	}
 }
 
 void uiNullDefault(void) {
-	uiCanvasClear(UI_BG);
-	const char *first = uiTranslate("Touch screen or press L+R");
-	const char *second = uiTranslate("to open the menu.");
-	uiText("NGPDS", 128 - uiTextWidth("NGPDS") / 2, 56, UI_INK, 244);
-	uiText(first, 128 - uiTextWidth(first) / 2, 88, UI_INK, 244);
-	uiText(second, 128 - uiTextWidth(second) / 2, 108, UI_SECONDARY, 244);
+	uiIdleScreen();
 }
 
 void uiAutoSub(void) { uiAuto(); }
 
 void uiAuto(void) {
 	setupMenu();
-	const Menu *menu = menus[selectedMenu];
+	const Menu *menu = getMenu(selectedMenu);
 	for (int i = 0; i < menu->itemCount; i++) {
 		const char *value = menu->items[i].txt2 ? menu->items[i].txt2() : NULL;
 		drawSubItem(menu->items[i].text, value);
@@ -128,18 +126,22 @@ void uiAuto(void) {
 
 
 void setupMenu(void) {
-	const Menu *menu = menus[selectedMenu];
+	const Menu *menu = getMenu(selectedMenu);
 	int pages = (menu->itemCount + UI_PAGE_ROWS - 1) / UI_PAGE_ROWS;
 	uiHeader(selectedMenu >= 1 && selectedMenu <= 3 ? "" : menu->header,
 		selectedMain, selected / UI_PAGE_ROWS + 1, pages ? pages : 1);
 	int visibleRows = menu->itemCount - (selected / UI_PAGE_ROWS) * UI_PAGE_ROWS;
 	if (visibleRows > UI_PAGE_ROWS) visibleRows = UI_PAGE_ROWS;
 	uiListEdges(visibleRows);
-	uiFooter(selectedMenu >= 4 && selectedMenu <= 8);
+	/* Only editable settings use "Change". Other second columns can be
+	 * informational, and settings menus also contain one-shot actions. */
+	bool changing = isSettingsMenu() && selected >= 0 && selected < menu->itemCount &&
+		menu->items[selected].txt2 != NULL;
+	uiFooter(changing, !menuUsesPhysicalKeys(), pages > 1);
 	menuItemRow = 0;
 }
 void setupSubMenuText(void) {
-	setupSubMenu(menus[selectedMenu]->header);
+	setupSubMenu(getMenu(selectedMenu)->header);
 }
 void setupSubMenu(const char *menuString) { (void)menuString; setupMenu(); }
 
@@ -223,6 +225,7 @@ void backOutOfMenu() {
 }
 
 void openMenu() {
+	if (menuUsesPhysicalKeys()) EMUinput = 0;
 	enterGUI();
 	setSelectedMain(lastMainMenu);
 	powerOn(POWER_2D_B);
@@ -253,9 +256,11 @@ void exitUI() {
 	/* The action that closes a menu belongs to the menu until released.
 	 * Refresh now too: the emulated CPU can run later in this same frame. */
 	u32 held = keysHeld();
-	menuReleaseMask |= held & (KEY_A | KEY_B | KEY_X | KEY_Y |
-		KEY_START | KEY_SELECT | KEY_L | KEY_R);
-	EMUinput = convertInput(filterMenuRelease(held));
+	if (menuUsesPhysicalKeys()) {
+		menuReleaseMask |= held & (KEY_A | KEY_B | KEY_X | KEY_Y |
+			KEY_START | KEY_SELECT | KEY_L | KEY_R);
+	}
+	EMUinput = convertInput(filterMenuRelease(held) & ~KEY_TOUCH);
 	if (settingsChanged && (emuSettings & AUTOSAVE_SETTINGS)) {
 		saveSettings();
 	}
@@ -287,7 +292,10 @@ void exitUI() {
 /// This is during emulation.
 void nullUI() {
 	int key = getInput();
-	if (EMUinput & KEY_OPEN_MENU) {
+	if ((EMUinput & KEY_OPEN_MENU) && (keysDown() & (KEY_L | KEY_R))) {
+		/* Consume the opening chord until release, including after touch-close. */
+		menuReleaseMask |= KEY_L | KEY_R;
+		EMUinput = convertInput(filterMenuRelease(keysHeld()) & ~KEY_TOUCH);
 		openMenu();
 		return;
 	}
@@ -302,12 +310,22 @@ void nullUI() {
 	updateInfoLog();
 }
 
+static bool isSettingsMenu(void) {
+	return selectedMenu >= 4 && selectedMenu <= 8;
+}
+
 /// This is during menu.
 void subUI() {
-	const int key = getMenuInput(menus[selectedMenu]->itemCount);
+	const int key = getMenuInput(getMenu(selectedMenu)->itemCount);
 
 	if (key & KEY_A) {
-		menus[selectedMenu]->items[selected].fn();
+		getMenu(selectedMenu)->items[selected].fn();
+	}
+	else if (isSettingsMenu()) {
+		int direction = !!(key & KEY_RIGHT) - !!(key & KEY_LEFT);
+		if (direction) {
+			changeMenuValue(selectedMenu, selected, direction);
+		}
 	}
 	if (key & KEY_B) {
 		backOutOfMenu();
@@ -327,16 +345,36 @@ void subUI() {
 int getMenuInput(int itemCount) {
 	int keyHit = getInput();
 	selected = getMenuTouch(&keyHit, selected, itemCount);
-	selected = getMenuPos(keyHit, selected, itemCount);
+	if (isSettingsMenu()) {
+		/* Change one value per press, even for settings that write to disk. */
+		int horizontal = KEY_LEFT | KEY_RIGHT;
+		keyHit &= ~horizontal;
+		if (menuUsesPhysicalKeys()) keyHit |= keysDown() & horizontal;
+		selected = getMenuPos(keyHit & ~horizontal, selected, itemCount);
+	}
+	else {
+		selected = getMenuPos(keyHit, selected, itemCount);
+	}
 	return keyHit;
 }
 
 //---------------------------------------------------------------------------------
 int getInput(void) {
-	EMUinput = convertInput(filterMenuRelease(keysHeld()));
+	u32 held = keysHeld();
+	bool menuOpen = isMenuOpen();
+	bool physicalMenu = menuUsesPhysicalKeys();
+	if (menuOpen && physicalMenu) {
+		/* Keep keys consumed by the menu out of the game until release. */
+		menuReleaseMask = held & ~KEY_TOUCH;
+		EMUinput = 0;
+	}
+	else {
+		EMUinput = convertInput(filterMenuRelease(held) & ~KEY_TOUCH);
+	}
 	int keyHit = keysDown();
 	int dpad = keysDownRepeat() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT);
 	keyHit = dpad | (keyHit & (KEY_A | KEY_B | KEY_X | KEY_Y | KEY_START | KEY_L | KEY_R | KEY_TOUCH));
+	if (menuOpen && !physicalMenu) keyHit &= KEY_TOUCH;
 	if (browserActive && (keyHit & (KEY_L | KEY_R))) {
 		pendingMainTab = keyHit & KEY_R ? (selectedMain == 3 ? 1 : selectedMain + 1) :
 			(selectedMain == 1 ? 3 : selectedMain - 1);
@@ -360,9 +398,18 @@ int getInput(void) {
 				else pendingBrowserSelection = item;
 			}
 		} else if (touch.py >= 168) {
-			if (touch.px >= 8 && touch.px < 88) keyHit |= KEY_A;
-			else if (touch.px >= 88 && touch.px < 168) keyHit |= KEY_B;
+			enum UiFooterAction action = uiFooterHit(touch.px, !physicalMenu,
+				browserItems > UI_PAGE_ROWS);
+			if (action == UI_FOOTER_ACCEPT) keyHit |= KEY_A;
+			else if (action == UI_FOOTER_BACK) keyHit |= KEY_B;
+			else if (action == UI_FOOTER_NEXT) {
+				pendingBrowserSelection = nextMenuPage(browserSelected, browserItems);
+			}
 		}
+	}
+	/* The file picker runs its own VBlank loop while the menu action waits. */
+	if (browserActive && gameInserted && !(keyHit & (KEY_A | KEY_B))) {
+		runEmulationFrame();
 	}
 	return keyHit;
 }
@@ -406,8 +453,13 @@ int getMenuTouch(int *keyHit, int sel, int itemCount) {
 			else sel = item;
 		}
 	} else if (touch.py >= 168) {
-		if (touch.px >= 8 && touch.px < 88) *keyHit |= KEY_A;
-		else if (touch.px >= 88 && touch.px < 168) *keyHit |= KEY_B;
+		enum UiFooterAction action = uiFooterHit(touch.px, !menuUsesPhysicalKeys(),
+			itemCount > UI_PAGE_ROWS);
+		if (action == UI_FOOTER_ACCEPT) *keyHit |= KEY_A;
+		else if (action == UI_FOOTER_BACK) *keyHit |= KEY_B;
+		else if (action == UI_FOOTER_NEXT) {
+			sel = nextMenuPage(sel, itemCount);
+		}
 	}
 	return sel;
 }
@@ -415,10 +467,11 @@ int getMenuTouch(int *keyHit, int sel, int itemCount) {
 void redrawUI(void) {
 	browserActive = false;
 	pendingBrowserSelection = -1;
-	int count = menus[selectedMenu]->itemCount;
+	const Menu *menu = getMenu(selectedMenu);
+	int count = menu->itemCount;
 	if (selected >= count) selected = count ? count - 1 : 0;
 	menuYOffset = (selected / UI_PAGE_ROWS) * UI_PAGE_ROWS;
-	menus[selectedMenu]->drawFunc();
+	menu->drawFunc();
 	outputLogToScreen();
 	uiCanvasPresent();
 }
@@ -438,7 +491,7 @@ int drawFileList(char **entries, int sel, int itemCount) {
 		if (*name == '~') name++;
 		uiDrawFileEntry(name, i, browserFirst + i == sel);
 	}
-	uiFooter(false);
+	uiFooter(false, !menuUsesPhysicalKeys(), itemCount > UI_PAGE_ROWS);
 	uiCanvasPresent();
 	return sel - browserFirst;
 }
@@ -485,7 +538,7 @@ void drawText(const char *str, int row, int palette) {
 		strlcpy(browserTitle, str, sizeof(browserTitle));
 		browserActive = true;
 		uiHeader(browserTitle, selectedMain, 1, 1);
-		uiFooter(false);
+		uiFooter(false, !menuUsesPhysicalKeys(), false);
 	} else {
 		const char *text = uiTranslate(str);
 		while (*text == ' ') text++;
@@ -578,8 +631,9 @@ void outputLogToScreen(void) {
 	if (!logTimer || logBufPtr <= 0) return;
 	const char *text = uiTranslate(logBuffer[(logBufPtr - 1) & 7]);
 	if (!*text) return;
-	uiFillRect(8, 132, 240, 36, UI_TOP);
-	uiFillRect(8, 132, 240, 1, UI_RULE);
+	int top = isMenuOpen() ? 132 : 152;
+	uiFillRect(8, top, 240, 36, UI_TOP);
+	uiFillRect(8, top, 240, 1, UI_RULE);
 	char line[256];
 	int lineNumber = 0;
 	while (*text && lineNumber < 2) {
@@ -596,7 +650,7 @@ void outputLogToScreen(void) {
 			text = next;
 		}
 		line[length] = 0;
-		uiText(line, 16, 145 + lineNumber * 14, UI_INK, 240);
+		uiText(line, 16, top + 13 + lineNumber * 14, UI_INK, 240);
 		lineNumber++;
 	}
 }
@@ -664,6 +718,19 @@ const char *getAutoPauseGameText() {
 	return autoTxt[emuSettings & AUTOPAUSE_EMULATION];
 }
 
+void gameInputInMenuSet(void) {
+	emuSettings ^= GAME_INPUT_IN_MENU;
+	settingsChanged = true;
+	if (menuUsesPhysicalKeys()) {
+		menuReleaseMask = keysHeld() & ~KEY_TOUCH;
+		EMUinput = 0;
+	}
+}
+
+const char *getGameInputInMenuText(void) {
+	return autoTxt[(emuSettings & GAME_INPUT_IN_MENU) != 0];
+}
+
 void autoStateSet() {
 	emuSettings ^= AUTOLOAD_STATE;
 	settingsChanged = true;
@@ -717,8 +784,9 @@ const char *getDebugText() {
 	return autoTxt[gDebugSet & 1];
 }
 
-void sleepSet() {
-	int i = (emuSettings+0x100) & AUTOSLEEP_MASK;
+void adjustMenuSleep(int direction) {
+	int i = cycleSetting((emuSettings & AUTOSLEEP_MASK) >> 8,
+		ARRSIZE(sleepTxt), direction) << 8;
 	emuSettings = (emuSettings & ~AUTOSLEEP_MASK) | i;
 	if (i == AUTOSLEEP_5MIN) {
 		sleepTime = 60*60*5;		// 5 min
@@ -733,6 +801,10 @@ void sleepSet() {
 		sleepTime = 0x7F000000;		// 360 days...
 	}
 	settingsChanged = true;
+}
+
+void sleepSet(void) {
+	adjustMenuSleep(1);
 }
 
 const char *getSleepText() {
@@ -757,18 +829,21 @@ const char *getScreenSwapText() {
 	return autoTxt[(emuSettings & MAIN_ON_BOTTOM)>>11];
 }
 
-void gammaSet() {
-	gGammaValue++;
-	if (gGammaValue > 4) gGammaValue = 0;
+void adjustMenuGamma(int direction) {
+	gGammaValue = cycleSetting(gGammaValue, ARRSIZE(brighTxt), direction);
 	settingsChanged = true;
+}
+
+void gammaSet(void) {
+	adjustMenuGamma(1);
 }
 
 const char *getGammaText() {
 	return brighTxt[gGammaValue];
 }
 
-void autoASet() {
-	autoA++;
+void adjustMenuAutoA(int direction) {
+	autoA = cycleSetting(autoA, ARRSIZE(autoTxt), direction);
 	joyCfg |= KEY_A+(KEY_A<<16);
 	if (autoA == 1) {
 		joyCfg &= ~KEY_A;
@@ -776,17 +851,18 @@ void autoASet() {
 	else if (autoA == 2) {
 		joyCfg &= ~(KEY_A<<16);
 	}
-	else {
-		autoA = 0;
-	}
+}
+
+void autoASet(void) {
+	adjustMenuAutoA(1);
 }
 
 const char *getAutoAText() {
 	return autoTxt[autoA];
 }
 
-void autoBSet() {
-	autoB++;
+void adjustMenuAutoB(int direction) {
+	autoB = cycleSetting(autoB, ARRSIZE(autoTxt), direction);
 	joyCfg |= KEY_B+(KEY_B<<16);
 	if (autoB == 1) {
 		joyCfg &= ~KEY_B;
@@ -794,19 +870,25 @@ void autoBSet() {
 	else if (autoB == 2) {
 		joyCfg &= ~(KEY_B<<16);
 	}
-	else {
-		autoB = 0;
-	}
+}
+
+void autoBSet(void) {
+	adjustMenuAutoB(1);
 }
 
 const char *getAutoBText() {
 	return autoTxt[autoB];
 }
 
-void speedSet() {
-	int i = (emuSettings+0x40) & EMUSPEED_MASK;
+void adjustMenuSpeed(int direction) {
+	int i = cycleSetting((emuSettings & EMUSPEED_MASK) >> 6,
+		ARRSIZE(speedTxt), direction) << 6;
 	emuSettings = (emuSettings & ~EMUSPEED_MASK) | i;
 	setEmuSpeed(i>>6);
+}
+
+void speedSet(void) {
+	adjustMenuSpeed(1);
 }
 
 const char *getSpeedText() {

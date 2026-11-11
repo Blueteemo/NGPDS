@@ -13,9 +13,9 @@ ARM_NONE_EABI_PATH	?= $(WONDERFUL_TOOLCHAIN)/toolchain/gcc-arm-none-eabi/bin/
 
 NAME		:= NGPDS
 
-GAME_TITLE	:= NGPDS
-GAME_SUBTITLE	:= NeoGeo Pocket Emulator
-GAME_AUTHOR	:= github.com/FluBBaOfWard
+GAME_TITLE	:= NGPDS Fusion Edition
+GAME_SUBTITLE	:= Neo Geo Pocket Emulator
+GAME_AUTHOR	:= FluBBaOfWard / Blueteemo
 GAME_ICON	:= NGPLogo.bmp
 
 # A compile_commands.json file is created if this is set to 1

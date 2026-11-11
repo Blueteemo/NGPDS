@@ -22,7 +22,7 @@ static void setupStream(void);
 
 bool gameInserted = false;
 static int sleepTimer = 60*60*5;	// 5 min
-static bool vBlankOverflow = false;
+static volatile bool vBlankOverflow = false;
 
 static mm_ds_system sys;
 static mm_stream myStream;
@@ -35,6 +35,7 @@ void myVblank(void) {
 //---------------------------------------------------------------------------------
 	vBlankOverflow = true;
 //	DC_FlushRange(EMUPALBUFF, 0x400);
+	publishEmuBackground();
 	vblIrqHandler();
 }
 
@@ -83,21 +84,29 @@ int main(int argc, char **argv) {
 		loadGame(argv[1]);
 		soundSetMuteGUI();
 	}
+	scanKeys();
 	getInput();
 
 	while (1) {
 		waitVBlank();
 		guiRunLoop();
-		if (!persistenceCanRun()) {
-			pauseEmulation = true;
-			soundSetMuteGUI();
-		}
-		if (!pauseEmulation) {
-			run();
-		}
+		runEmulationFrame();
 //		checkTimeOut();
 	}
 	return 0;
+}
+
+void runEmulationFrame(void) {
+	/* An empty HLE console has no standalone CPU program to execute. */
+	if (!hasConsoleProgram() || !persistenceCanRun()) {
+		if (!pauseEmulation) {
+			pauseEmulation = true;
+			soundSetMuteGUI();
+		}
+	}
+	if (!pauseEmulation) {
+		run();
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -116,6 +125,9 @@ void waitVBlank() {
 		swiIntrWait(1, IRQ_VBLANK);
 	}
 	vBlankOverflow = false;
+	/* Sample once per UI update. A VBlank during emulation must not
+	 * replace a key-down edge before the menu can read it. */
+	scanKeys();
 }
 
 //---------------------------------------------------------------------------------

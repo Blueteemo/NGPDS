@@ -366,6 +366,25 @@ static void turnPowerOn(void) {
 	}
 }
 
+void resetConsole(void) {
+	if (!hasConsoleProgram() || !persistenceCanRun()) {
+		return;
+	}
+	checkMachine();
+	bool realBios = gMachine == HW_NGPMONO ?
+		g_BIOSBASE_BNW != NULL : g_BIOSBASE_COLOR != NULL;
+	if (realBios) {
+		/* loadCart resets the cartridge, but leaves a real BIOS running. */
+		turnPowerOff();
+	}
+	resetCartridgePreservingFlash(false);
+	if (realBios) {
+		turnPowerOn();
+	}
+	EMUinput = 0;
+	closeMenu();
+}
+
 /* Keep incomplete cartridge reads out of the running emulation. ZIP reads
  * retain the shared bounded decompressor; raw reads check every I/O result. */
 static int readCartridge(void *dest,const char *name,unsigned limit) {
@@ -454,7 +473,6 @@ bool loadGame(const char *gameName) {
 }
 
 void selectGame() {
-	pauseEmulation = true;
 	ui10();
 	const char *gameName = browseForFileType(FILEEXTENSIONS".zip");
 	if (loadGame(gameName)) {
@@ -540,7 +558,7 @@ static bool selectBios(char *dest, const char *fileTypes) {
 }
 
 void selectColorBios() {
-    pauseEmulation=true;char old[FILEPATH_MAX_LENGTH];strlcpy(old,cfg.biosPathColor,sizeof(old));
+    char old[FILEPATH_MAX_LENGTH];strlcpy(old,cfg.biosPathColor,sizeof(old));
     if(selectBios(cfg.biosPathColor,".ngp.ngc.zip.bin")) {
         if(loadColorBIOS()){settingsChanged=true;resetCartridgePreservingFlash(true);}
         else {strlcpy(cfg.biosPathColor,old,sizeof(cfg.biosPathColor));infoOutput("BIOS read failed; previous BIOS kept.");}

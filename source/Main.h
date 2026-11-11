@@ -9,6 +9,7 @@ extern bool gameInserted;
 extern u16 *map0sub;
 
 void waitVBlank(void);
+void runEmulationFrame(void);
 
 /**
  * Waits the specified number of frames before returning.

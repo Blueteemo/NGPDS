@@ -6,6 +6,15 @@ extern "C" {
 #endif
 
 #define ALLOW_SPEED_HACKS	(1<<17)
+/* Preserve the former on/off color bit as the value for Mild Vivid. */
+#define COLOR_MODE_SHIFT	18
+#define COLOR_MODE_MASK		(3 << COLOR_MODE_SHIFT)
+#define BORDER_MODE_SHIFT	20
+#define BORDER_MODE_MASK	(3 << BORDER_MODE_SHIFT)
+#define GAME_INPUT_IN_MENU	(1 << 22)
+
+enum { COLOR_ORIGINAL, COLOR_MILD_VIVID, COLOR_VIVID, COLOR_MODE_COUNT };
+enum { BORDER_GRAPHITE, BORDER_ORIGINAL, BORDER_OFF, BORDER_MODE_COUNT };
 
 typedef struct {				//(config struct)
 	char magic[4];				//="CFG",0

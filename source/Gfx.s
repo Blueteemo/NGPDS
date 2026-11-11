@@ -7,7 +7,7 @@
 	.global gfxInit
 	.global gfxReset
 	.global monoPalInit
-	.global paletteInit
+	.global paletteInitBase
 	.global MAPPED_RGB
 	.global paletteTxAll
 	.global refreshGfx
@@ -150,9 +150,8 @@ monoPalette:
 ;@	.short 0xFFF,0xDDD,0xBBB,0x999,0x777,0x555,0x333,0x000
 ;@	.short 0xFFF,0xDDD,0xBBB,0x999,0x777,0x555,0x333,0x000
 ;@----------------------------------------------------------------------------
-paletteInit:		;@ r0-r3 modified.
-	.type paletteInit STT_FUNC
-;@ Called by ui.c:  void paletteInit(gammaVal);
+paletteInitBase:	;@ Build the gamma-adjusted RGB555 palette.
+	.type paletteInitBase STT_FUNC
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r4-r7,lr}
 	mov r1,r0					;@ Gamma value = 0 -> 4
@@ -312,7 +311,11 @@ updateLED:
 ;@----------------------------------------------------------------------------
 	ldrb r0,[geptr,#kgeLedOnOff]
 	tst r0,#0x01
-	ldr r0,=BG_GFX+0x1000
+	ldr r0,=REG_BASE
+	ldrh r0,[r0,#REG_BG2CNT]
+	and r0,r0,#0x1F00			;@ BG2 screen block in bits 8–12
+	mov r0,r0,lsl#3
+	add r0,r0,#BG_GFX			;@ Screen block * 0x800
 	ldr r1,[r0,#64*24]
 	movne r1,r1,ror#16
 	add r0,r0,#0x104
@@ -456,8 +459,6 @@ vblIrqHandler:
 	mov r0,#0
 	strb r0,frameDone
 nothingNew:
-
-	blx scanKeys
 	ldmfd sp!,{r4-r5,pc}
 
 

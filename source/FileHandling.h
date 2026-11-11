@@ -48,6 +48,7 @@ bool saveFlashChecked(void);
 bool persistBeforeChange(void);
 bool persistenceCanRun(void);
 void resetCartridgePreservingFlash(bool wholeMachine);
+void resetConsole(void);
 void exitGameSafely(void);
 void autosaveSettingsSet(void);
 bool loadGame(const char *gameName);

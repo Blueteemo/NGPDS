@@ -10,6 +10,7 @@
 #include "FileHandling.h"
 #include "Cart.h"
 #include "Gfx.h"
+#include "NeoGeoPocket.h"
 #include "io.h"
 #include "cpu.h"
 #include "bios.h"
@@ -20,6 +21,8 @@
 #include "K2Audio/Version.h"
 
 #define EMUVERSION "V0.6.0 2026-09-17"
+#define FUSION_VERSION "V0.1.0"
+#define FUSION_BUILD_DATE "2026-11-11"
 
 void hacksInit(void);
 
@@ -30,6 +33,10 @@ static const char *getBufferModeText(void);
 static void aboutControls(void);
 static void aboutComponents(void);
 static void gammaChange(void);
+static void colorModeChange(void);
+static const char *getColorModeText(void);
+static void borderModeChange(void);
+static const char *getBorderModeText(void);
 static void paletteChange(void);
 static const char *getPaletteText(void);
 static void bufferModeSet(void);
@@ -76,7 +83,7 @@ const MItem optionItems[] = {
 	{"Controller", ui4},
 	{"Display", ui5},
 	{"Machine", ui6},
-	{"Settings", ui7},
+	{"General", ui7},
 	{"Debug", ui8},
 };
 const MItem ctrlItems[] = {
@@ -86,6 +93,8 @@ const MItem ctrlItems[] = {
 };
 const MItem displayItems[] = {
 	{"Gamma:", gammaChange, getGammaText},
+	{"Color Mode:", colorModeChange, getColorModeText},
+	{"Screen Border:", borderModeChange, getBorderModeText},
 	{"B&W Palette:", paletteChange, getPaletteText},
 	{"VRAM Double Buffer:", bufferModeSet, getBufferModeText},
 };
@@ -100,18 +109,31 @@ const MItem machineItems[] = {
 	{"Select BnW Bios", selectBnWBios},
 	{"Select Color Bios", selectColorBios},
 };
-const MItem setItems[] = {
-	{"Interface Language:", uiLanguageSet, getUiLanguageText},
-	{"Autosave Flash:", saveNVRAMSet, getSaveNVRAMText},
-	{"Autosave Settings:", autosaveSettingsSet, getAutoSettingsText},
-	{"Autoload Flash:", autoNVRAMSet, getAutoNVRAMText},
-	{"Menu Screen Off:", powerSaveSet, getPowerSaveText},
-	{"Autoload State:", autoStateSet, getAutoStateText},
-	{"Autopause Game:", autoPauseGameSet, getAutoPauseGameText},
-	{"Emulator on Bottom:", screenSwapSet, getScreenSwapText},
-	{"Speed:", speedSet, getSpeedText},
-	{"Autosleep:", sleepSet, getSleepText},
+#define GENERAL_BEFORE_GAME_INPUT \
+	{"Interface Language:", uiLanguageSet, getUiLanguageText}, \
+	{"Autosave Flash:", saveNVRAMSet, getSaveNVRAMText}, \
+	{"Autosave Settings:", autosaveSettingsSet, getAutoSettingsText}, \
+	{"Autoload Flash:", autoNVRAMSet, getAutoNVRAMText}, \
+	{"Menu Screen Off:", powerSaveSet, getPowerSaveText}, \
+	{"Autoload State:", autoStateSet, getAutoStateText}, \
+	{"Autopause Game:", autoPauseGameSet, getAutoPauseGameText}
+
+#define GENERAL_AFTER_GAME_INPUT \
+	{"Emulator on Bottom:", screenSwapSet, getScreenSwapText}, \
+	{"Speed:", speedSet, getSpeedText}, \
+	{"Autosleep:", sleepSet, getSleepText}
+
+static const MItem pausedSettings[] = {
+	GENERAL_BEFORE_GAME_INPUT,
+	GENERAL_AFTER_GAME_INPUT,
 };
+static const MItem liveSettings[] = {
+	GENERAL_BEFORE_GAME_INPUT,
+	{"Game Control in Menu:", gameInputInMenuSet, getGameInputInMenuText},
+	GENERAL_AFTER_GAME_INPUT,
+};
+#undef GENERAL_BEFORE_GAME_INPUT
+#undef GENERAL_AFTER_GAME_INPUT
 const MItem debugItems[] = {
 	{"Debug Output:", debugTextSet, getDebugText},
 	{"Disable Foreground:", fgrLayerSet, getFgrLayerText},
@@ -125,6 +147,7 @@ const MItem quitItems[] = {
 };
 
 static const char *aboutVersion(void) { return EMUVERSION; }
+static const char *aboutForkVersion(void) { return FUSION_VERSION " " FUSION_BUILD_DATE; }
 static const char *aboutAuthor(void) { return "FluBBaOfWard"; }
 static const char *aboutMaintainer(void) {
 	return gUiLanguage == UI_LANGUAGE_ZH_CN ? "千岚之夏" : "Blueteemo";
@@ -142,6 +165,7 @@ static const char *aboutPsg(void) { return ARMSNGGVERSION; }
 static const char *aboutFont(void) { return "Fusion Pixel 12px"; }
 const MItem aboutItems[] = {
 	{"NGPDS", uiDummy, aboutVersion},
+	{"Fusion Version", uiDummy, aboutForkVersion},
 	{"Original Author", uiDummy, aboutAuthor},
 	{"Fork Maintainer", uiDummy, aboutMaintainer},
 	{"Button Guide", aboutControls},
@@ -170,14 +194,20 @@ const Menu menu3 = MENU_M("About", uiAbout, aboutItems);
 const Menu menu4 = MENU_M("Controller Settings", uiAuto, ctrlItems);
 const Menu menu5 = MENU_M("Display Settings", uiDisplay, displayItems);
 const Menu menu6 = MENU_M("Machine Settings", uiMachine, machineItems);
-const Menu menu7 = MENU_M("Settings", uiAuto, setItems);
+static const Menu pausedGeneral = MENU_M("General", uiAuto, pausedSettings);
+static const Menu liveGeneral = MENU_M("General", uiAuto, liveSettings);
 const Menu menu8 = MENU_M("Debug", uiAuto, debugItems);
 const Menu menu9 = MENU_M("Quit Emulator?", uiAuto, quitItems);
 const Menu menu10 = MENU_M("", uiDummy, dummyItems);
 const Menu menu11 = MENU_M("Button Guide", uiAuto, aboutControlItems);
 const Menu menu12 = MENU_M("Components & Font", uiAuto, aboutComponentItems);
 
-const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6, &menu7, &menu8, &menu9, &menu10, &menu11, &menu12 };
+static const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6, &pausedGeneral, &menu8, &menu9, &menu10, &menu11, &menu12 };
+
+const Menu *getMenu(int menu) {
+	if (menu == 7 && !(emuSettings & AUTOPAUSE_EMULATION)) return &liveGeneral;
+	return menus[menu];
+}
 
 static void aboutControls(void) { enterMenu(11); }
 static void aboutComponents(void) { enterMenu(12); }
@@ -196,10 +226,14 @@ static void debugStepFrame(void) {
 	stepFrame();
 }
 
-static void uiLanguageSet(void) {
-	gUiLanguage = (gUiLanguage + 1) % UI_LANGUAGE_COUNT;
+static void adjustUiLanguage(int direction) {
+	gUiLanguage = cycleSetting(gUiLanguage, UI_LANGUAGE_COUNT, direction);
 	settingsChanged = true;
 	uiLanguageChanged();
+}
+
+static void uiLanguageSet(void) {
+	adjustUiLanguage(1);
 }
 
 static const char *getUiLanguageText(void) {
@@ -281,11 +315,6 @@ void nullUIDebug(int key) {
 	}
 }
 
-void resetConsole() {
-	checkMachine();
-	resetCartridgePreservingFlash(false);
-}
-
 void updateGameInfo() {
 	char catalog[8];
 	strlMerge(gameInfoString, "Game Name: ", ngpHeader->name, sizeof(gameInfoString));
@@ -330,13 +359,53 @@ const char *getSwapABText() {
 	return autoTxt[(joyCfg>>10)&1];
 }
 
-/// Change gamma (brightness)
-void gammaChange() {
-	gammaSet();
+static void updateDisplayPalette(void) {
 	paletteInit(gGammaValue);
 	paletteTxAll();					// Make new palette visible
 	setupMenuPalette();
+}
+
+/// Change gamma (brightness)
+static void adjustGamma(int direction) {
+	adjustMenuGamma(direction);
+	updateDisplayPalette();
 	settingsChanged = true;
+}
+
+static void gammaChange(void) {
+	adjustGamma(1);
+}
+
+static void adjustColorMode(int direction) {
+	int mode = cycleSetting(getColorMode(), COLOR_MODE_COUNT, direction);
+	emuSettings = (emuSettings & ~COLOR_MODE_MASK) | (mode << COLOR_MODE_SHIFT);
+	updateDisplayPalette();
+	settingsChanged = true;
+}
+
+static void colorModeChange(void) {
+	adjustColorMode(1);
+}
+
+static const char *getColorModeText(void) {
+	static const char *const names[] = {"Original", "Mild Vivid", "Vivid"};
+	return names[getColorMode()];
+}
+
+static void adjustBorderMode(int direction) {
+	int mode = cycleSetting(getBorderMode(), BORDER_MODE_COUNT, direction);
+	emuSettings = (emuSettings & ~BORDER_MODE_MASK) | (mode << BORDER_MODE_SHIFT);
+	setupEmuBackground();
+	settingsChanged = true;
+}
+
+static void borderModeChange(void) {
+	adjustBorderMode(1);
+}
+
+static const char *getBorderModeText(void) {
+	static const char *const names[] = {"Graphite", "Classic", "Hidden"};
+	return names[getBorderMode()];
 }
 
 /// Turn on/off rendering of foreground
@@ -361,15 +430,15 @@ const char *getSprLayerText() {
 	return autoTxt[(gGfxMask>>4)&1];
 }
 
-void paletteChange() {
-	gPaletteBank++;
-	if (gPaletteBank > 4) {
-		gPaletteBank = 0;
-	}
+static void adjustPalette(int direction) {
+	gPaletteBank = cycleSetting(gPaletteBank, 5, direction);
 	monoPalInit(gPaletteBank);
 	paletteTxAll();
 	fixBiosSettings();
 	settingsChanged = true;
+}
+static void paletteChange(void) {
+	adjustPalette(1);
 }
 const char *getPaletteText() {
 	return gPaletteBank<5?palTxt[gPaletteBank]:"BIOS palette";
@@ -396,11 +465,11 @@ const char *getLanguageText() {
 	return langTxt[gLang];
 }
 
-void machineSet() {
-	gMachineSet++;
-	if (gMachineSet >= HW_SELECT_END) {
-		gMachineSet = 0;
-	}
+static void adjustMachine(int direction) {
+	gMachineSet = cycleSetting(gMachineSet, HW_SELECT_END, direction);
+}
+static void machineSet(void) {
+	adjustMachine(1);
 }
 const char *getMachineText() {
 	return machTxt[gMachineSet];
@@ -422,13 +491,44 @@ const char *getSpeedHackText() {
 	return autoTxt[(emuSettings & ALLOW_SPEED_HACKS)>>17];
 }
 
-void z80SpeedSet() {
-	gZ80Speed++;
-	if (gZ80Speed >= 5) {
-		gZ80Speed = 0;
-	}
+static void adjustZ80Speed(int direction) {
+	gZ80Speed = cycleSetting(gZ80Speed, ARRSIZE(cpuSpeedTxt), direction);
 	tweakZ80Speed(gZ80Speed);
+}
+static void z80SpeedSet(void) {
+	adjustZ80Speed(1);
 }
 const char *getZ80SpeedText() {
 	return cpuSpeedTxt[gZ80Speed&7];
+}
+
+void changeMenuValue(int menu, int row, int direction) {
+	const MItem *item = &getMenu(menu)->items[row];
+	if (!item->txt2) {
+		return;
+	}
+	static const struct {
+		fptr action;
+		void (*adjust)(int direction);
+	} cycles[] = {
+		{autoASet, adjustMenuAutoA},
+		{autoBSet, adjustMenuAutoB},
+		{gammaChange, adjustGamma},
+		{colorModeChange, adjustColorMode},
+		{borderModeChange, adjustBorderMode},
+		{paletteChange, adjustPalette},
+		{machineSet, adjustMachine},
+		{z80SpeedSet, adjustZ80Speed},
+		{uiLanguageSet, adjustUiLanguage},
+		{speedSet, adjustMenuSpeed},
+		{sleepSet, adjustMenuSleep},
+	};
+	for (unsigned i = 0; i < ARRSIZE(cycles); i++) {
+		if (item->fn == cycles[i].action) {
+			cycles[i].adjust(direction);
+			return;
+		}
+	}
+	/* The remaining value rows in Options are two-state toggles. */
+	item->fn();
 }

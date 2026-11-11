@@ -60,18 +60,18 @@ int main(void) {
 	assert(changed);
 	for(unsigned language=0;language<UI_LANGUAGE_COUNT;language++) {
 		gUiLanguage=language;
-		uiHeader("Settings",2,1,2);
+		uiHeader("General",2,1,2);
 		uiDrawEntry("Interface Language:",language==2?"日本語":language==1?"简体中文":"English",0,true);
 		uiDrawEntry("Autosave Flash:","On",1,false);
-		uiFooter(true);
+		uiFooter(true, false, false);
 		for(int y=186;y<192;y++)for(int x=0;x<256;x++)assert(getPixel(x,y)==UI_BG);
 	}
 	/* Raw names must not accidentally become translation keys. */
 	gUiLanguage=UI_LANGUAGE_ZH_CN;
-	uiCanvasClear(0);uiDrawFileEntry("Settings",0,false);
+	uiCanvasClear(0);uiDrawFileEntry("General",0,false);
 	memcpy(chinese,uiCanvasPixels(),sizeof(chinese));
 	gUiLanguage=UI_LANGUAGE_ENGLISH;
-	uiCanvasClear(0);uiDrawFileEntry("Settings",0,false);
+	uiCanvasClear(0);uiDrawFileEntry("General",0,false);
 	assert(!memcmp(chinese,uiCanvasPixels(),sizeof(chinese)));
 	/* Top-level pages have no repeated heading; submenus keep their context. */
 	uiHeader("", 3, 1, 1);
@@ -82,10 +82,10 @@ int main(void) {
 		gUiLanguage=language;
 		for(int count=1;count<=5;count++)for(int selected=0;selected<count;selected++) {
 			uiHeader("", 3, 1, 1);
-			for(int i=0;i<count;i++)uiDrawEntry("Settings",NULL,i,i==selected);
+			for(int i=0;i<count;i++)uiDrawEntry("General",NULL,i,i==selected);
 			memcpy(withoutEdges,uiCanvasPixels(),sizeof(withoutEdges));
 			uiHeader("", 3, 1, 1);uiListEdges(count);
-			for(int i=0;i<count;i++)uiDrawEntry("Settings",NULL,i,i==selected);
+			for(int i=0;i<count;i++)uiDrawEntry("General",NULL,i,i==selected);
 			if(count<5)assert(!memcmp(withoutEdges,uiCanvasPixels(),sizeof(withoutEdges)));
 			else {
 				for(int y=24;y<168;y++)for(int x=8;x<248;x++) {
@@ -96,7 +96,7 @@ int main(void) {
 				assert(getPixel(128,36)!=UI_BG&&getPixel(128,155)!=UI_BG);
 			}
 		}
-		uiHeader("Settings",2,1,1);assert(uiRowsTop()==48);
+		uiHeader("General",2,1,1);assert(uiRowsTop()==48);
 		for(int y=24;y<48;y++)for(int x=200;x<240;x++)assert(getPixel(x,y)==UI_BG);
 		for(int y=24;y<48;y++)for(int x=0;x<16;x++)assert(getPixel(x,y)==UI_BG);
 		uiHeader("",1,2,2);assert(uiRowsTop()==36);
@@ -104,19 +104,36 @@ int main(void) {
 	}
 	for(unsigned language=0;language<UI_LANGUAGE_COUNT;language++) {
 		gUiLanguage=language;
-		for(int changing=0;changing<2;changing++) {
-			uiCanvasClear(UI_BG);uiFooter(changing);
-			for(int group=0;group<3;group++) {
-				int lo=256,hi=-1;
-				for(int y=173;y<186;y++)for(int x=8+group*80;x<88+group*80;x++) {
-					if(getPixel(x,y)==UI_SECONDARY){if(x<lo)lo=x;if(x>hi)hi=x;}
+		for (int changing = 0; changing < 2; changing++) {
+			for (int mode = 0; mode < 3; mode++) {
+				uiFooter(changing, mode != 0, mode == 2);
+				int count = mode == 1 ? 2 : 3;
+				int zone = 240 / count;
+				int left[3], right[3];
+				for (int group = 0; group < count; group++) {
+					left[group] = 256;
+					right[group] = -1;
+					for (int y = 173; y < 186; y++) {
+						for (int x = 8 + group * zone; x < 8 + (group + 1) * zone; x++) {
+							if (getPixel(x, y) != UI_SECONDARY) continue;
+							if (x < left[group]) left[group] = x;
+							if (x > right[group]) right[group] = x;
+						}
+					}
+					assert(right[group] >= left[group]);
 				}
-				assert(hi>=lo);
-				int delta=lo+hi+1-2*(48+group*80);
-				assert(delta>=-4&&delta<=4);
+				assert(left[0] == 255 - right[count - 1]);
+				if (count == 3) {
+					int gapDifference = (left[1] - right[0]) - (left[2] - right[1]);
+					assert(gapDifference >= -1 && gapDifference <= 1);
+				}
 			}
 		}
 	}
+	assert(uiFooterHit(120, true, false) == UI_FOOTER_ACCEPT);
+	assert(uiFooterHit(188, true, false) == UI_FOOTER_BACK);
+	assert(uiFooterHit(208, true, true) == UI_FOOTER_NEXT);
+	assert(uiFooterHit(208, false, true) == UI_FOOTER_NONE);
 	char longText[300];memset(longText,'W',299);longText[299]=0;
 	uiTextEllipsis(longText,16,64,UI_INK,240);
 	puts("PASS 12px canvas: clipping, dirty tiles, native advances, Japanese variants, raw filenames, three-locale layout, hierarchy, sparse-page preservation, five-row hairlines, centered footer columns and footer margin");

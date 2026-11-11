@@ -5,7 +5,7 @@ import re,subprocess,tempfile
 root=Path(__file__).resolve().parents[1];source=(root/'source/Menu.c').read_text()
 fn=re.search(r'static u32 filterMenuRelease\(u32 held\) \{.*?\n\}',source,re.S);assert fn
 exit_body=source[source.index('void exitUI() {'):]
-barrier=re.search(r'u32 held = keysHeld\(\);.*?EMUinput = convertInput\(filterMenuRelease\(held\)\);',exit_body,re.S);assert barrier
+barrier=re.search(r'u32 held = keysHeld\(\);.*?EMUinput = convertInput\(filterMenuRelease\(held\) & ~KEY_TOUCH\);',exit_body,re.S);assert barrier
 program='''#include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
@@ -19,7 +19,10 @@ typedef uint32_t u32;
 #define KEY_L (1u<<9)
 #define KEY_X (1u<<10)
 #define KEY_Y (1u<<11)
+#define KEY_TOUCH (1u<<12)
 static u32 menuReleaseMask, rawHeld, EMUinput;
+static int physicalMenu = 1;
+static int menuUsesPhysicalKeys(void) {return physicalMenu;}
 static u32 keysHeld(void) {return rawHeld;}
 static u32 convertInput(u32 keys) {return keys;}
 '''+fn.group()+'\nstatic void consume(void) {\n'+barrier.group()+'''\n}
@@ -39,6 +42,8 @@ int main(void) {
  }
  menuReleaseMask=0;rawHeld=0;consume();assert(!EMUinput && !menuReleaseMask);
  assert(filterMenuRelease(KEY_B)==KEY_B); /* Touch-only dismissal swallows no fresh key. */
+ physicalMenu=0;rawHeld=KEY_TOUCH|KEY_B|KEY_RIGHT;consume();
+ assert(EMUinput==(KEY_B|KEY_RIGHT) && !menuReleaseMask); /* Live menu dismisses by touch. */
  puts("PASS actual menu exit/release filter: same-frame suppression, held/repressed actions, independent releases, directions and touch");return 0;
 }
 '''

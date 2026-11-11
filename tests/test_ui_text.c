@@ -22,11 +22,16 @@ int main(void) {
 	assert(uiLanguageFromConfig(UI_LANGUAGE_TAG | 2) == UI_LANGUAGE_JAPANESE);
 	assert(uiLanguageToConfig(0, UI_LANGUAGE_JAPANESE) == (UI_LANGUAGE_TAG | 2));
 	gUiLanguage = UI_LANGUAGE_JAPANESE;
-	assert(!strcmp(uiTranslate("Settings"), "設定"));
+	assert(!strcmp(uiTranslate("General"), "一般"));
+	assert(!strcmp(uiTranslate("Game Control in Menu:"), "メニュー中のゲーム操作："));
 	assert(!strcmp(uiTranslate("Load Game"), "ゲームを開く"));
 	gUiLanguage = UI_LANGUAGE_ENGLISH;
+	assert(!strcmp(uiTranslate("General"), "General"));
+	assert(!strcmp(uiTranslate("Game Control in Menu:"), "Game Control in Menu:"));
 	assert(!strcmp(uiTranslate("Load Game"), "Load Game"));
 	gUiLanguage = UI_LANGUAGE_ZH_CN;
+	assert(!strcmp(uiTranslate("General"), "通用"));
+	assert(!strcmp(uiTranslate("Game Control in Menu:"), "菜单中控制游戏："));
 	assert(!strcmp(uiTranslate("Load Game"), "载入游戏"));
 	assert(!strcmp(uiTranslate("Off"), "关"));
 	assert(!strcmp(uiTranslate("UNKNOWN"), "UNKNOWN"));

@@ -126,6 +126,38 @@ void uiTextEllipsis(const char *text, int x, int baseline, unsigned color, int r
 	uiText("...", right - 18, baseline, color, right);
 }
 
+void uiIdleScreen(void) {
+	uiCanvasClear(UI_BG);
+
+	/* A compact Pocket silhouette in the menu's existing palette. */
+	uiRoundRect(103, 47, 50, 28, UI_SUBTITLE);
+	uiRoundRect(104, 48, 48, 26, UI_TOP);
+	uiRoundRect(118, 51, 20, 18, UI_RULE);
+	uiFillRect(120, 53, 16, 14, UI_BG);
+	uiFillRect(124, 56, 8, 8, UI_ACTIVE);
+	uiFillRect(109, 58, 7, 3, UI_SECONDARY);
+	uiFillRect(111, 56, 3, 7, UI_SECONDARY);
+	uiRoundRect(140, 60, 4, 4, UI_SECONDARY);
+	uiRoundRect(145, 56, 4, 4, UI_VALUE);
+
+	const char *title = "NGPDS Fusion Edition";
+	uiText(title, 128 - uiTextWidth(title) / 2, 98, UI_INK, 248);
+	const char *prompt = uiTranslate("Open menu");
+	uiText(prompt, 128 - uiTextWidth(prompt) / 2, 122, UI_SUBTITLE, 248);
+
+	const char *touch = uiTranslate("Touch screen");
+	const char *buttons = "L + R";
+	const int capWidth = uiTextWidth(buttons) + 14;
+	const int touchWidth = uiTextWidth(touch);
+	int x = 128 - (touchWidth + 24 + capWidth) / 2;
+	uiText(touch, x, 143, UI_SECONDARY, 248);
+	x += touchWidth;
+	uiText("/", x + (24 - uiTextWidth("/")) / 2, 143, UI_SECONDARY, 248);
+	x += 24;
+	uiRoundRect(x, 130, capWidth, 18, UI_TOP);
+	uiText(buttons, x + 7, 143, UI_VALUE, x + capWidth);
+}
+
 void uiHeader(const char *title, int activeTab, int page, int pages) {
 	bool root = !title || !*title;
 	rowsTop = root ? 36 : UI_ROW_TOP;
@@ -135,24 +167,20 @@ void uiHeader(const char *title, int activeTab, int page, int pages) {
 	static const char *const tabs[] = {"File", "Options", "About"};
 	for (int i = 0; i < 3; i++) {
 		const char *label = uiTranslate(tabs[i]);
-		char caption[80];
-		if (root && pages > 1 && activeTab == i + 1) {
-			snprintf(caption, sizeof(caption), "%s %d/%d", label, page, pages);
-			label = caption;
-		}
 		int left = 8 + i * 80;
 		if (activeTab == i + 1) uiRoundRect(left + 2, 2, 76, 20, UI_ACTIVE);
 		uiText(label, left + 40 - uiTextWidth(label) / 2, 16,
 			activeTab == i + 1 ? UI_INK : UI_SECONDARY, left + 78);
 	}
-	if (root) return;
 	char number[16];
 	if (pages > 1) snprintf(number, sizeof(number), "%d/%d", page, pages);
 	else number[0] = 0;
 	int numberLeft = 240 - uiTextWidth(number);
-	uiTextEllipsis(uiTranslate(title), 16, 40, UI_INK,
-		pages > 1 ? numberLeft - 8 : 240);
-	uiText(number, numberLeft, 40, UI_SECONDARY, 240);
+	if (!root) {
+		uiTextEllipsis(uiTranslate(title), 16, 40, UI_SUBTITLE,
+			pages > 1 ? numberLeft - 8 : 240);
+	}
+	uiText(number, numberLeft, root ? 34 : 40, UI_SECONDARY, 240);
 }
 
 int uiRowsTop(void) { return rowsTop; }
@@ -163,17 +191,61 @@ void uiListEdges(int visibleRows) {
 	uiFillRect(16, rowsTop + UI_PAGE_ROWS * UI_ROW_HEIGHT - 1, 224, 1, UI_TOP);
 }
 
-void uiFooter(bool changing) {
+enum UiFooterAction uiFooterHit(int x, bool touchOnly, bool multiplePages) {
+	if (x < 8 || x >= 248) return UI_FOOTER_NONE;
+	if (touchOnly && !multiplePages) return x < 128 ? UI_FOOTER_ACCEPT : UI_FOOTER_BACK;
+	if (x < 88) return UI_FOOTER_ACCEPT;
+	if (x < 168) return UI_FOOTER_BACK;
+	return touchOnly ? UI_FOOTER_NEXT : UI_FOOTER_NONE;
+}
+
+/* Measure the pixels that actually draw, excluding space after the last glyph. */
+static int textInkWidth(const char *text, int *leading) {
+	int x = 0;
+	int left = UI_SCREEN_WIDTH;
+	int right = 0;
+	while (*text) {
+		const uint8_t *entry = glyph(uiNextCodepoint(&text));
+		if (!entry) continue;
+		for (int bit = 0; bit < 144; bit++) {
+			if (entry[3 + bit / 8] & (0x80 >> (bit & 7))) {
+				int col = x + bit % 12;
+				if (col < left) left = col;
+				if (col >= right) right = col + 1;
+			}
+		}
+		x += entry[2];
+	}
+	*leading = right ? left : 0;
+	return right - *leading;
+}
+
+void uiFooter(bool changing, bool touchOnly, bool multiplePages) {
 	uiFillRect(0, 168, 256, 24, UI_BG);
 	uiFillRect(8, 168, 240, 1, UI_RULE);
 	const char *labels[] = {
-		uiTranslate(changing ? "A Change" : "A Select"),
-		uiTranslate("B Back"), uiTranslate("L/R Tabs")
+		changing ? "A Change" : "A Select", "B Back", "L/R Tabs"
 	};
-	for (int i = 0; i < 3; i++) {
-		int center = 48 + i * 80;
-		uiText(labels[i], center - uiTextWidth(labels[i]) / 2, 183,
-			UI_SECONDARY, center + 38);
+	if (touchOnly) {
+		labels[0] = changing ? "Change" : "Select";
+		labels[1] = "Back";
+		labels[2] = "Next page";
+	}
+	int count = touchOnly && !multiplePages ? 2 : 3;
+	int widths[3], leading[3], positions[3];
+	for (int i = 0; i < count; i++) {
+		labels[i] = uiTranslate(labels[i]);
+		widths[i] = textInkWidth(labels[i], &leading[i]);
+	}
+	int last = count - 1;
+	int margin = (count == 2 ? 68 : 48) - (widths[0] + widths[last] + 2) / 4;
+	positions[0] = margin;
+	positions[last] = UI_SCREEN_WIDTH - margin - widths[last];
+	if (count == 3) {
+		positions[1] = (positions[0] + widths[0] + positions[2] - widths[1] + 1) / 2;
+	}
+	for (int i = 0; i < count; i++) {
+		uiText(labels[i], positions[i] - leading[i], 183, UI_SECONDARY, UI_SCREEN_WIDTH);
 	}
 }
 

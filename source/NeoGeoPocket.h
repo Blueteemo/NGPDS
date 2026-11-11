@@ -14,8 +14,11 @@ void unpackState(const void *statePtr);
 /// Gets the total state size in bytes.
 int getStateSize(void);
 
-/// Setup NeoGeo Pocket background for emulator screen.
+/// Prepare the selected border in the inactive VRAM slot.
 void setupEmuBackground(void);
+/// Publish the prepared border before the VBlank palette transfer.
+void publishEmuBackground(void);
+unsigned getBorderMode(void);
 
 #ifdef __cplusplus
 } // extern "C"
