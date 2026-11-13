@@ -11,6 +11,48 @@
 #define rCodeL(r)	(*((u32 *)getRegAdr((r) & ~3)))
 
 /**
+ * Resolve the chip geometry and write-permission bitmap for a flash bank.
+ * Bank 1 only exists on 4 MiB cartridges (two 2 MiB chips).
+ */
+static bool flashGeometry(u32 bank, u32 *chipSize, const u8 **permissions) {
+	/* FlashWriteHI() is a no-op in the current backend; accept only the LO
+	 * chip rather than reporting success for bytes that cannot be written. */
+	if (bank != 0) return false;
+	*chipSize = (flashSize == 0x400000) ? 0x200000 : flashSize;
+	*permissions = getFlashLOBlocksAddress();
+	return *chipSize != 0;
+}
+
+/**
+ * True only if every byte of [offset, offset+length) is inside the chip and
+ * inside a block whose write-enable bit is set.  No flash command is issued
+ * unless the whole range passes, so rejected calls cannot change data.
+ */
+static bool flashRangeWritable(u32 bank, u32 offset, u32 length) {
+	u32 chipSize;
+	const u8 *permissions;
+	if (!flashGeometry(bank, &chipSize, &permissions)) return false;
+	if (offset >= chipSize || length > chipSize - offset) return false;
+	while (length) {
+		int block = getBlockFromAddress((int)offset);
+		if (block < 0 || block >= MAX_BLOCKS) return false;
+		int start = getBlockOffset(block);
+		int size = getBlockSize(block);
+		if (start < 0 || size <= 0) return false;
+		u32 blockStart = (u32)start;
+		u32 blockEnd = blockStart + (u32)size;
+		if (offset < blockStart || offset >= blockEnd || blockEnd > chipSize) return false;
+		if (!(permissions[block] & 0x02)) return false;
+		u32 step = blockEnd - offset;
+		if (step > length) step = length;
+		offset += step;
+		length -= step;
+	}
+	return true;
+}
+
+
+/**
  *
  */
 void iBIOSHLE(int vector) {
@@ -126,49 +168,64 @@ void iBIOSHLE(int vector) {
 
 	// VECT_FLASHWRITE (0xFF6FD8)
 	case 0x06: {
-		int i, bank = 0x200000;
+		u32 i;
+		u32 bank = rCodeB(0x30);
+		u32 destination = rCodeL(0x38);
+		u32 source = rCodeL(0x3C);
+		u32 count = (u32)rCodeW(0x34) * 256u;
+		u32 base = bank ? 0x800000 : 0x200000;
 
-		// Select HI rom
-		if (rCodeB(0x30) == 1) {
-			bank = 0x800000;
+		if (count == 0) {
+			rCodeB(0x30) = 0;	// SYS_SUCCESS, no write, no dirty block
+			break;
 		}
-		int destination = rCodeL(0x38) + bank;
-		int source = rCodeL(0x3C) + bank;
-
-		int count = rCodeW(0x34) * 256;
+		if (source > 0xFFFFFFu - count || !flashRangeWritable(bank, destination, count)) {
+			rCodeB(0x30) = 1;	// SYS_FAILURE, no flash bytes touched
+			break;
+		}
 		for (i = 0; i < count; i++) {
-			t9StoreBX(0xAA, bank + 0x5555);
-			t9StoreBX(0x55, bank + 0x2AAA);
-			t9StoreBX(0xA0, bank + 0x5555);
-			t9StoreBX(t9LoadBX(source + i), destination + i);
+			t9StoreBX(0xAA, base + 0x5555);
+			t9StoreBX(0x55, base + 0x2AAA);
+			t9StoreBX(0xA0, base + 0x5555);
+			t9StoreBX(t9LoadBX(source + i), base + destination + i);
 		}
-		int block = getBlockFromAddress(destination);
-		markBlockDirty(rCodeB(0x30), block);
-
-		rCodeB(0x30) = 0;		// RA3 = SYS_SUCCESS
+		// The flash backend marks every written block dirty itself.
+		rCodeB(0x30) = 0;	// SYS_SUCCESS
 	}
 		break;
 
-	// VECT_FLASHALLERS (0xFF7042)
+	// VECT_FLASHALLERS (0xFF7042): not implemented, do not report success.
 	case 0x07:
-		// TODO
-		rCodeB(0x30) = 0;	// RA3 = SYS_SUCCESS
+		rCodeB(0x30) = 1;	// SYS_FAILURE (unsupported, documented)
 		break;
+
 	// VECT_FLASHERS (0xFF7082)
 	case 0x08: {
-		u32 address = 0x200000;
-		// Select HI rom?
-		if (rCodeB(0x30) == 1) {
-			address = 0x800000;
-		}
-		address += getBlockOffset(rCodeB(0x34));
+		u32 bank = rCodeB(0x30);
+		u32 block = rCodeB(0x35);
+		u32 chipSize;
+		const u8 *permissions;
+		u32 base;
 
-		t9StoreBX(0xAA, address + 0x5555);
-		t9StoreBX(0x55, address + 0x2AAA);
-		t9StoreBX(0x80, address + 0x5555);
-		t9StoreBX(0xAA, address + 0x5555);
-		t9StoreBX(0x55, address + 0x2AAA);
-		rCodeB(0x30) = 0;	// RA3 = SYS_SUCCESS
+		if (!flashGeometry(bank, &chipSize, &permissions) || block >= MAX_BLOCKS) {
+			rCodeB(0x30) = 1;
+			break;
+		}
+		int offset = getBlockOffset(block);
+		int size = getBlockSize(block);
+		if (offset < 0 || size <= 0 || (u32)offset + (u32)size > chipSize ||
+		    !(permissions[block] & 0x02)) {
+			rCodeB(0x30) = 1;	// invalid or protected block
+			break;
+		}
+		base = bank ? 0x800000 : 0x200000;
+		t9StoreBX(0xAA, base + 0x5555);
+		t9StoreBX(0x55, base + 0x2AAA);
+		t9StoreBX(0x80, base + 0x5555);
+		t9StoreBX(0xAA, base + 0x5555);
+		t9StoreBX(0x55, base + 0x2AAA);
+		t9StoreBX(0x30, base + offset);
+		rCodeB(0x30) = 0;	// SYS_SUCCESS
 	}
 		break;
 
@@ -190,10 +247,9 @@ void iBIOSHLE(int vector) {
 	// ? (0xFF731F)
 	//case 0x0C: break;
 
-	// VECT_FLASHPROTECT (0xFF70CA)
+	// VECT_FLASHPROTECT (0xFF70CA): protection semantics not verified.
 	case 0x0D:
-		// TODO
-		rCodeB(0x30) = 0;	// RA3 = SYS_SUCCESS
+		rCodeB(0x30) = 1;	// SYS_FAILURE (unsupported, documented)
 		break;
 
 	// VECT_GEMODESET (0xFF17C4)

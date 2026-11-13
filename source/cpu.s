@@ -35,6 +35,18 @@
 	.section .text						;@ For anything else
 #endif
 	.align 2
+
+	;@ These K2GE calls finish frame events without consuming a new scanline.
+	;@ Keep the existing audio capture cadence and skip the extra CPU budgets.
+	.macro skipFrameEvent target
+	ldr geptr,=k2GE_0
+	ldmia geptr,{r0,r1}			;@ scanline, nextLineChange
+	cmp r0,#152
+	cmpeq r1,#199
+	beq \target
+	cmp r0,#199
+	beq \target
+	.endm
 ;@----------------------------------------------------------------------------
 run:						;@ Return after X frame(s)
 	.type   run STT_FUNC
@@ -69,6 +81,7 @@ runStart:
 ;@----------------------------------------------------------------------------
 ngpFrameLoop:
 ;@----------------------------------------------------------------------------
+	skipFrameEvent UpdateSound
 	ldrb r0,z80Enabled
 	cmp r0,#0
 	beq NoZ80Now
@@ -84,6 +97,7 @@ NoZ80Now:
 	ldr r0,tlcs900hCyclesPerScanline
 	bl tlcsRestoreAndRunXCycles
 ;@--------------------------------------
+UpdateSound:
 	bl soundUpdate
 	ldr geptr,=k2GE_0
 	bl gfxRecordBackground
@@ -130,6 +144,7 @@ stepFrame:					;@ Return after 1 frame
 ;@----------------------------------------------------------------------------
 ngpStepLoop:
 ;@----------------------------------------------------------------------------
+	skipFrameEvent StepGraphics
 	ldrb r0,z80Enabled
 	cmp r0,#0
 	beq NoZ80Step
@@ -145,6 +160,7 @@ NoZ80Step:
 	ldr r0,tlcs900hCyclesPerScanline
 	bl tlcsRestoreAndRunXCycles
 ;@--------------------------------------
+StepGraphics:
 	ldr geptr,=k2GE_0
 	bl gfxRecordBackground
 	bl k2GEDoScanline

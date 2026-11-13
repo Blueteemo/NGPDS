@@ -1,0 +1,8 @@
+#ifndef AUDIO_MODE_HEADER
+#define AUDIO_MODE_HEADER
+
+#define AUDIO_STANDARD 0
+#define AUDIO_LEGACY 1
+#define AUDIO_MODE_COUNT 2
+
+#endif

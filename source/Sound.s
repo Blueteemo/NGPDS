@@ -1,6 +1,7 @@
 #ifdef __arm__
 
 #include "K2Audio/SN76496.i"
+#include "AudioMode.h"
 
 	.extern pauseEmulation
 
@@ -25,7 +26,12 @@
 	.syntax unified
 	.arm
 
+#ifdef NDS
+	;@ Scanline and PSG register hooks run on the ARM9's hot path.
+	.section .itcm, "ax", %progbits
+#else
 	.section .text
+#endif
 	.align 2
 ;@----------------------------------------------------------------------------
 soundInit:
@@ -44,7 +50,7 @@ soundReset:
 	ldr r1,=k2Audio_0
 	bl sn76496Reset			;@ sound
 	ldmfd sp!,{lr}
-	bx lr
+	b soundResetAudioBuffers
 
 ;@----------------------------------------------------------------------------
 soundSetMuteGUI:
@@ -61,7 +67,8 @@ setMuteT6W28:
 	cmp r0,#0xAA
 	cmpne r0,#0x55
 	andeq r0,r0,#0xAA
-	strbeq r0,muteSoundChip
+	bxne lr
+	strb r0,muteSoundChip
 	bx lr
 ;@----------------------------------------------------------------------------
 soundRender:					;@ r0=length, r1=pointer
@@ -73,38 +80,73 @@ soundRender:					;@ r0=length, r1=pointer
 	tst r2,#0xFF00
 	bne playSamples
 
+	ldr r2,=soundMode
+	ldrb r2,[r2]
+	cmp r2,#AUDIO_STANDARD
+	beq mixEnhanced
+	stmfd sp!,{r0,lr}
+	ldr r2,=k2Audio_0
+	bl sn76496MixerLegacy
+	ldmfd sp!,{r0,pc}
+
+mixEnhanced:
+	;@ Use the enhanced mixer with the same stream callback as legacy audio.
 	stmfd sp!,{r0,lr}
 	ldr r2,=k2Audio_0
 	bl sn76496Mixer
-	ldmfd sp!,{r0,lr}
-	bx lr
+	ldmfd sp!,{r0,pc}
 
-playSamples:
-	stmfd sp!,{r0,lr}
-	ldr r12,pcmWritePtr
-	sub r12,r12,r0,lsr#2
-	ldr r2,=WAVBUFFER
-	mov r12,r12,lsl#SHIFTVAL
-wavLoop:
-	ldrb r3,[r2,r12,lsr#SHIFTVAL-1]
-//	ldrb lr,[r2,r12,lsr#SHIFTVAL-1]
-	eor r3,r3,#0x80
-	mov r3,r3,lsl#8
-	orr r3,r3,r3,lsl#16
+	.macro writeDacFrame
 	str r3,[r1],#4
 	str r3,[r1],#4
 	str r3,[r1],#4
 	str r3,[r1],#4
 	add r12,r12,#1<<SHIFTVAL
 	subs r0,r0,#4
-	bhi wavLoop
+	.endm
 
-	ldmfd sp!,{r0,lr}
+playSamples:
+	stmfd sp!,{r0,r1,lr}
+	ldr r12,pcmWritePtr
+	sub r12,r12,r0,lsr#2
+	ldr r2,=WAVBUFFER
+	mov r12,r12,lsl#SHIFTVAL
+	ldr lr,=soundMode
+	ldrb lr,[lr]
+	cmp lr,#AUDIO_LEGACY
+	bne stereoWavLoop
+
+monoWavLoop:
+	ldrb r3,[r2,r12,lsr#SHIFTVAL-1]
+	eor r3,r3,#0x80
+	mov r3,r3,lsl#8
+	orr r3,r3,r3,lsl#16
+	writeDacFrame
+	bhi monoWavLoop
+	ldmfd sp!,{r0,r1,lr}
 	bx lr
+
+stereoWavLoop:
+	mov r3,r12,lsr#SHIFTVAL-1
+	ldrh r3,[r2,r3]			;@ A2 left, A3 right.
+	eor r3,r3,#0x80
+	eor r3,r3,#0x8000
+	and lr,r3,#0xff00
+	and r3,r3,#0xff
+	mov r3,r3,lsl#8
+	orr r3,r3,lr,lsl#16
+	writeDacFrame
+	bhi stereoWavLoop
+	ldmfd sp!,{r0,r1,lr}
+	b soundFilterDac
 
 silenceMix:
 	mov r12,r0
-	ldr r2,=0x80008000
+	ldr r2,=soundMode
+	ldrb r2,[r2]
+	cmp r2,#AUDIO_LEGACY
+	ldreq r2,=0x80008000
+	movne r2,#0
 silenceLoop:
 	subs r12,r12,#1
 	strpl r2,[r1],#4
@@ -115,9 +157,12 @@ silenceLoop:
 ;@----------------------------------------------------------------------------
 soundUpdate:
 ;@----------------------------------------------------------------------------
-	ldrb r0,muteSoundChip
-	cmp r0,#0
-	bxeq lr
+	ldr r0,muteSound
+	tst r0,#0xff00
+	bne updateDac
+	bx lr
+
+updateDac:
 	ldr r2,pcmWritePtr
 	add r1,r2,#1
 	str r1,pcmWritePtr
@@ -162,7 +207,9 @@ muteSoundChip:
 	.byte 0
 	.space 2
 
-#ifdef GBA
+#ifdef NDS
+	.section .sbss				;@ Keep the PSG state in ARM9 DTCM.
+#elif defined(GBA)
 	.section .sbss				;@ This is EWRAM on GBA with devkitARM
 #else
 	.section .bss
@@ -170,6 +217,10 @@ muteSoundChip:
 	.align 2
 k2Audio_0:
 	.space snSize
+#ifdef NDS
+	.section .bss
+	.align 2
+#endif
 WAVBUFFER:
 	.space WAV_BUFFER_SIZE*2
 ;@----------------------------------------------------------------------------

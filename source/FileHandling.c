@@ -16,6 +16,7 @@
 #include "Shared/CartridgeRAM.h"
 #include "Main.h"
 #include "Gui.h"
+#include "Sound.h"
 #include "Cart.h"
 #include "cpu.h"
 #include "Gfx.h"
@@ -92,6 +93,7 @@ static bool configWrite(FILE *f,void *unused) {(void)unused;return fwrite(&cfg,1
 void applyConfigData(void) {
 	gUiLanguage = uiLanguageFromConfig((uint32_t)cfg.unused);
 	emuSettings  = cfg.emuSettings & ~EMUSPEED_MASK;	// Clear speed setting.
+	soundSetMode(soundModeFromSettings(emuSettings));
 	gGammaValue  = cfg.gammaValue;
 	gLang        = cfg.language;
 	gPaletteBank = cfg.palette;

@@ -21,8 +21,8 @@
 #include "K2Audio/Version.h"
 
 #define EMUVERSION "V0.6.0 2026-09-17"
-#define FUSION_VERSION "V0.1.0"
-#define FUSION_BUILD_DATE "2026-11-11"
+#define FUSION_VERSION "V0.2.3"
+#define FUSION_BUILD_DATE "2026-11-13"
 
 void hacksInit(void);
 
@@ -61,6 +61,8 @@ static const char *getSprLayerText(void);
 
 static void uiDisplay(void);
 static void uiMachine(void);
+static void audioModeSet(void);
+static const char *getAudioModeText(void);
 static void updateGameInfo(void);
 static void checkBattery(void);
 
@@ -111,6 +113,7 @@ const MItem machineItems[] = {
 };
 #define GENERAL_BEFORE_GAME_INPUT \
 	{"Interface Language:", uiLanguageSet, getUiLanguageText}, \
+	{"Audio Mode:", audioModeSet, getAudioModeText}, \
 	{"Autosave Flash:", saveNVRAMSet, getSaveNVRAMText}, \
 	{"Autosave Settings:", autosaveSettingsSet, getAutoSettingsText}, \
 	{"Autoload Flash:", autoNVRAMSet, getAutoNVRAMText}, \
@@ -202,7 +205,8 @@ const Menu menu10 = MENU_M("", uiDummy, dummyItems);
 const Menu menu11 = MENU_M("Button Guide", uiAuto, aboutControlItems);
 const Menu menu12 = MENU_M("Components & Font", uiAuto, aboutComponentItems);
 
-static const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6, &pausedGeneral, &menu8, &menu9, &menu10, &menu11, &menu12 };
+static const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6,
+	&pausedGeneral, &menu8, &menu9, &menu10, &menu11, &menu12 };
 
 const Menu *getMenu(int menu) {
 	if (menu == 7 && !(emuSettings & AUTOPAUSE_EMULATION)) return &liveGeneral;
@@ -211,6 +215,23 @@ const Menu *getMenu(int menu) {
 
 static void aboutControls(void) { enterMenu(11); }
 static void aboutComponents(void) { enterMenu(12); }
+
+static void adjustAudioMode(int direction) {
+	static const unsigned modeFlags[] = {COMPATIBLE_AUDIO, LEGACY_AUDIO};
+	int mode = cycleSetting(soundModeFromSettings(emuSettings), AUDIO_MODE_COUNT, direction);
+	emuSettings = (emuSettings & ~AUDIO_MODE_MASK) | modeFlags[mode];
+	soundSetMode(mode);
+	settingsChanged = true;
+}
+
+static void audioModeSet(void) {
+	adjustAudioMode(1);
+}
+
+static const char *getAudioModeText(void) {
+	static const char *const names[] = {"Standard Audio", "Classic Audio"};
+	return names[soundModeFromSettings(emuSettings)];
+}
 
 bool hasConsoleProgram(void) {
 	/* A BIOS for the other machine cannot run the active HLE console. */
@@ -520,6 +541,7 @@ void changeMenuValue(int menu, int row, int direction) {
 		{machineSet, adjustMachine},
 		{z80SpeedSet, adjustZ80Speed},
 		{uiLanguageSet, adjustUiLanguage},
+		{audioModeSet, adjustAudioMode},
 		{speedSet, adjustMenuSpeed},
 		{sleepSet, adjustMenuSleep},
 	};
