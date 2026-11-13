@@ -4,7 +4,7 @@
 
 Fusion Edition is Blueteemo's unofficial maintenance fork of NGPDS, the Neo Geo Pocket and Neo Geo Pocket Color emulator for Nintendo DS-family systems created by **Fredrik Ahlström (FluBBaOfWard)**.
 
-The current tested build identifies itself as `V0.1.0 2026-11-11` in About.
+The v1.0.0 baseline identifies itself as `V1.0.0 2026-11-13` in About.
 
 [Original project](https://github.com/FluBBaOfWard/NGPDS) · [Original user guide](Docs/UPSTREAM_README.md) · [Earlier combined baseline](https://github.com/Blueteemo/NGPDS/tree/personal/combined-stable)
 
@@ -14,13 +14,13 @@ The current tested build identifies itself as `V0.1.0 2026-11-11` in About.
 - **Flash saves and settings.** Adds Flash autosave, checks new writes before replacement, keeps a recovery copy and skips unchanged saves. Tested legacy saves include valid eight-byte empty Flash records. [Persistence notes](Docs/persistence.md)
 - **Trilingual menus.** English, Simplified Chinese and Japanese share a 12px Fusion Pixel interface. Touch controls, menu hints and key routing adapt to the selected input mode.
 - **Display options.** Choose the Graphite, Classic or Off border. Original, Mild Vivid (+15%) and Vivid (+20%) adjust saturation independently of the original gamma control. [Border artwork notes](Docs/GRAPHITE_BORDER.md)
-- **Startup audio.** A short fade-in smooths the launch transient. The tested NDSi + R4 setup no longer produced the loud startup pop. Game audio synthesis and timing after the fade use the existing implementation. [Audio notes](Docs/STARTUP_AUDIO.md)
+- **Audio.** **Options → General → Audio Mode** offers Standard (default) and Classic (legacy mixer). A short fade-in addresses the startup pop. The pop was gone in earlier NDSi + R4 testing. [Startup audio notes](Docs/STARTUP_AUDIO.md)
 
 ## Install and use
 
 1. Build `NGPDS.nds` from the source below and place it on the flashcart. Some carts require DLDI patching.
 2. Keep the existing `ngpds/` or `data/ngpds/` directory when upgrading. It holds settings and saves. Make a backup before replacing the executable.
-3. Supply your own ROMs and BIOS. For native in-game saving, see the BIOS guidance in the [original user guide](Docs/UPSTREAM_README.md). Select a BIOS under **Options → Machine**.
+3. Supply your own ROMs. The built-in HLE BIOS can run supported games and handle supported Flash saves. To use a BIOS image you supply, select it under **Options → Machine**.
 4. Tap the lower screen or press **L+R** to open the menu. Under **Options → General → Interface Language**, choose English, 简体中文 or 日本語.
 
 ### Menu and display
@@ -35,19 +35,18 @@ By default, the open menu receives physical buttons and touch. **Autopause Game*
 
 ## Build
 
-This source lives on `personal/trilingual-menu` and uses pinned Git submodules. The tested toolchain was Wonderful arm-none-eabi GCC 16.2.0 with BlocksDS 1.24.0.
+The v1.0.0 source archive includes the main repository and all seven pinned dependency commits as Git bundles. Its `rebuild.sh` restores a clean checkout offline, builds `NGPDS.nds` and checks its SHA-256. The verified toolchain is Wonderful arm-none-eabi GCC 16.2.0 with BlocksDS 1.24.0.
+
+From the directory containing the source archive’s `rebuild.sh`:
 
 ```sh
-git clone --recursive --branch personal/trilingual-menu https://github.com/Blueteemo/NGPDS.git
-cd NGPDS
 export WONDERFUL_TOOLCHAIN=/path/to/wonderful
-export BLOCKSDS="$WONDERFUL_TOOLCHAIN/thirdparty/blocksds/core"
-make -j8 COMPDB=0
+sh rebuild.sh /path/to/new-checkout
 ```
 
 ## Verification and limits
 
-The latest menu build received user testing on NDSi + R4. Automated tests cover selected Japanese and Chinese-patched versions of Pure and Cure, rendering, key routing, old save files and injected write failures. Other ROM revisions, devices and scenes may behave differently. Save recovery has been tested with simulated failures. Sudden power loss on a physical SD card remains unverified. General audio fidelity, including percussion, is a separate investigation.
+Earlier menu and startup audio builds were tested on NDSi + R4. Automated tests cover selected scenes from the Japanese and Chinese-patched versions of Pure and Cure, menu input, legacy saves and simulated write failures. In melonDS, the Japanese release of Cure saved and resumed after a cold boot using the built-in HLE BIOS. That result covers the tested game and save path. Physical SD-card power loss and percussion fidelity remain unverified. The v0.2.3 R4 baseline was reproduced from a clean checkout and matched the installation checksum. The v1.0.0 build uses that source baseline with updated version metadata.
 
 [Menu internals and test history](Docs/TRILINGUAL_MENU.md) · [Original scroll diagnostic ROMs](https://github.com/Blueteemo/ngpc-scroll-tests)
 

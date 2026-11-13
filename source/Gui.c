@@ -21,7 +21,7 @@
 #include "K2Audio/Version.h"
 
 #define EMUVERSION "V0.6.0 2026-09-17"
-#define FUSION_VERSION "V0.2.3"
+#define FUSION_VERSION "V1.0.0"
 #define FUSION_BUILD_DATE "2026-11-13"
 
 void hacksInit(void);
