@@ -1,64 +1,66 @@
-# NGPDS — Blueteemo Fork
+# NGPDS — Fusion Edition
 
-[简体中文](README.zh-CN.md)
+**English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
 
-NGPDS is a Neo Geo Pocket / Neo Geo Pocket Color emulator for Nintendo DS-family systems, originally developed by **Fredrik Ahlström (FluBBaOfWard)**. This unofficial fork preserves compatibility, rendering-performance, and save-handling work developed while testing Memories Off - Pure and Infinity Cure.
+**[Download v0.2.3 source and dependencies (ZIP)](https://github.com/Blueteemo/NGPDS/raw/d5389c337dc0f4e93cac3e75bf18e2be0ffd602b/NGPDS_Fusion_v0.2.3_Source.zip)** · [SHA-256](https://github.com/Blueteemo/NGPDS/blob/d5389c337dc0f4e93cac3e75bf18e2be0ffd602b/SHA256SUMS.txt)
 
-[Original project](https://github.com/FluBBaOfWard/NGPDS) · [Original usage and menu documentation](Docs/UPSTREAM_README.md)
+The ZIP contains the v0.2.3 source and build inputs. This branch retains the earlier combined runtime.
 
-## Choose a branch
+Fusion Edition is Blueteemo's unofficial maintenance fork of NGPDS, the Neo Geo Pocket and Neo Geo Pocket Color emulator for Nintendo DS-family systems created by **Fredrik Ahlström (FluBBaOfWard)**.
 
-| Branch | Contents |
-| --- | --- |
-| [`personal/combined-stable`](https://github.com/Blueteemo/NGPDS/tree/personal/combined-stable) | Combined Pure/Cure graphics, performance, Flash-save, and settings improvements. Runtime source matches the locally accepted combined baseline; documentation is updated. |
-| `main` | Upstream runtime baseline plus this fork's documentation. **Does not contain the combined improvements.** |
-| [`fix/raster-graphics-performance`](https://github.com/Blueteemo/NGPDS/tree/fix/raster-graphics-performance) | Separate graphics/performance proposal, [upstream PR #15](https://github.com/FluBBaOfWard/NGPDS/pull/15). |
-| [`fix/flash-autosave-persistence`](https://github.com/Blueteemo/NGPDS/tree/fix/flash-autosave-persistence) | Separate persistence proposal, [upstream PR #14](https://github.com/FluBBaOfWard/NGPDS/pull/14). |
+The v0.2.3 baseline identifies itself as `V0.2.3 2026-11-13` in About.
 
-The combined branch preserves accepted commit `8b9a49b2ebb1f37d9e49a835c5f833ca41ec58f2` and its pinned dependencies. Later isolated scroll-boundary experiments and the reduced save-only candidate are **not** included. The upstream proposals remain unmerged. This documentation update does not publish a new emulator binary release.
+[Original project](https://github.com/FluBBaOfWard/NGPDS) · [Original user guide](Docs/UPSTREAM_README.md) · [Earlier combined baseline](https://github.com/Blueteemo/NGPDS/tree/1c55ee4115e84cd40bd5ffc51c447814a3367aa2)
 
-## Combined-branch changes
+## What Fusion Edition adds
 
-- **Memories Off - Pure:** improve the tested character transitions, scanline background scrolling, and profile-page text. Cache sprite inputs and skip redundant composition and uploads to reduce rendering work.
-- **Infinity Cure:** restore missing story text in the tested gameplay scenes while preserving the tested CG, background, and layer behavior.
-- **Flash saves and settings:** add a Flash autosave option, improve configuration persistence, validate replacement files, retain recovery copies, and skip unchanged Flash writes. Tested legacy `.fla`, `.sta`, and `settings.cfg` formats remain compatible, including valid eight-byte empty Flash records.
+- **Graphics compatibility.** Restores story text in the tested scenes of *Infinity Cure*. Improves character transitions, scanline scrolling and profile text in *Memories Off Pure*. The renderer uses scanline state, with caching to reduce redundant sprite work. [Rendering notes](Docs/raster.md)
+- **Flash saves and settings.** Adds Flash autosave, checks new writes before replacement, keeps a recovery copy and skips unchanged saves. Tested legacy saves include valid eight-byte empty Flash records. [Persistence notes](Docs/persistence.md)
+- **Trilingual menus.** English, Simplified Chinese and Japanese share a 12px Fusion Pixel interface. Touch controls, menu hints and key routing adapt to the selected input mode.
+- **Display options.** Choose the Graphite, Classic or Off border. Original, Mild Vivid (+15%) and Vivid (+20%) adjust saturation independently of the original gamma control. [Border artwork notes](https://github.com/Blueteemo/NGPDS/blob/a3b33264382e5056ab8b997d76957dd1607d0ec8/Docs/GRAPHITE_BORDER.md)
+- **Audio.** **Options → General → Audio Mode** offers Standard (default) and Classic (legacy mixer). A short fade-in addresses the startup pop. The pop was gone in earlier NDSi + R4 testing. [Startup audio notes](https://github.com/Blueteemo/NGPDS/blob/a3b33264382e5056ab8b997d76957dd1607d0ec8/Docs/STARTUP_AUDIO.md)
 
-Rendering changes address general scanline/register behavior; there are no game-ID, fixed-frame, or image-signature conditions. No audio-synthesis or clock workaround is introduced. The sprite compositor adds no DMA channel or HBlank CPU interrupt; backdrop replay uses DMA1, palette replay uses DMA2/DMA3 after the existing VBlank transfers, and DMA0 retains the scroll stream.
+## Install and use
 
-The combined branch enables Flash/settings autosaving for a fresh configuration. Existing configurations retain their explicit choices, including disabled autosaving. **Replacing the executable does not turn an existing Off setting On.** With Flash autosaving off, use **File → Save Flash** to persist in-game progress before leaving.
+1. Build `NGPDS.nds` from the source below and place it on the flashcart. Some carts require DLDI patching.
+2. Keep the existing `ngpds/` or `data/ngpds/` directory when upgrading. It holds settings and saves. Make a backup before replacing the executable.
+3. Supply your own ROMs. The built-in HLE BIOS can run supported games and handle supported Flash saves. To use a BIOS image you supply, select it under **Options → Machine**.
+4. Tap the lower screen or press **L+R** to open the menu. Under **Options → General → Interface Language**, choose English, 简体中文 or 日本語.
 
-## Validation and limitations
+### Menu and display
 
-The combined baseline passed automated emulator checks, save-failure injection, configuration tests, and audio comparisons. Testing focused on the Japanese releases and the specific translated ROM versions used during development. Other translation patches, expanded ROMs, scenes, and games are not automatically covered.
+By default, the open menu receives physical buttons and touch. **Autopause Game** controls whether the game keeps running behind the menu. Turn it off to reveal **Game Control in Menu**. This separate option is off by default. Enable it to send physical buttons to the loaded game and use touch for the menu. Touch **Next page** to cycle through a multipage menu in that mode. Without a loaded ROM, physical buttons operate the menu and file browser.
 
-An earlier optimized C build received positive user feedback on NDSi + R4 in ordinary DS/NTR mode. This is historical feedback, **not** a new hardware validation of the final combined executable or its later save changes. Save protection does not guarantee recovery from every SD-card fault or sudden power loss. Reference-core agreement is not physical-hardware proof; complete compatibility and timing accuracy are not claimed.
+**Menu Screen Off**, **Autopause Game** and **Emulator on Bottom** are inherited NGPDS options. The screen-off option turns off the unused screen while the menu is closed, including the top screen if the game is on the bottom.
 
-Combined-branch implementation notes: [rendering](https://github.com/Blueteemo/NGPDS/blob/personal/combined-stable/Docs/raster.md) and [persistence](https://github.com/Blueteemo/NGPDS/blob/personal/combined-stable/Docs/persistence.md).
+### Saving
 
-## Build and use
+**Autosave Flash** and **Autosave Settings** start enabled for a fresh configuration. Existing configurations keep their choices. With autosave disabled, use **File → Save Flash** or **File → Save Settings**. Save states are separate from in-game Flash saves.
 
-For the combined source:
+## Build
+
+The v0.2.3 source archive includes the main repository and all seven pinned dependency commits as Git bundles. Its `rebuild.sh` restores a clean checkout offline, builds `NGPDS.nds` and checks its SHA-256. The verified toolchain is Wonderful arm-none-eabi GCC 16.2.0 with BlocksDS 1.24.0.
+
+From the directory containing the source archive’s `rebuild.sh`:
 
 ```sh
-git clone --recursive --branch personal/combined-stable https://github.com/Blueteemo/NGPDS.git
-cd NGPDS
-# Configure your existing Wonderful / BlocksDS installation first.
-make -j8 COMPDB=0
+export WONDERFUL_TOOLCHAIN=/path/to/wonderful
+sh rebuild.sh /path/to/new-checkout
 ```
 
-The accepted build used Wonderful arm-none-eabi GCC 16.2.0 and BlocksDS 1.24.0. `COMPDB=0` disables compilation-database merging, not code generation. Keep the pinned submodule revisions when reproducing that baseline.
+## Verification and limits
 
-Put `NGPDS.nds` on your card, retain the `ngpds/` data directory, and supply your own games and any required BIOS. Back up saves/configuration before replacing an executable. Menu controls, BIOS selection, and the original DS/DS Lite memory constraints are documented in the [preserved upstream README](Docs/UPSTREAM_README.md). Its game-issue list describes the **upstream baseline**, not a verdict on the modified branch. On the combined branch, **Autosave Flash** is an additional setting.
+Earlier menu and startup audio builds were tested on NDSi + R4. Automated tests cover selected scenes from the Japanese and Chinese-patched versions of Pure and Cure, menu input, legacy saves and simulated write failures. In melonDS, the Japanese release of Cure saved and resumed after a cold boot using the built-in HLE BIOS. That result covers the tested game and save path. Physical SD-card power loss and percussion fidelity remain unverified. The final v0.2.3 build was reproduced from a clean checkout and matched the R4 installation checksum.
 
-## Reproducible diagnostics
-
-[NGPC scroll tests](https://github.com/Blueteemo/ngpc-scroll-tests) provides original test ROMs, source, build instructions, and reference observations. It is a separate MIT-licensed diagnostic project, not the license for this emulator. The later minimal K2GE experiment is kept separate from this combined baseline.
-
-## Authorship and notices
-
-Original NGPDS credits and copyright notices are retained below and in the preserved upstream documentation. Dependency notices remain with their respective sources. This fork does not imply endorsement by the original author and does not assign a new license to upstream code. No commercial game ROM, BIOS, private save, or copyrighted-game screenshot is provided.
+[Menu internals and test history](https://github.com/Blueteemo/NGPDS/blob/a3b33264382e5056ab8b997d76957dd1607d0ec8/Docs/TRILINGUAL_MENU.md) · [Original scroll diagnostic ROMs](https://github.com/Blueteemo/ngpc-scroll-tests)
 
 ## Credits
+
+- Original NGPDS: **Fredrik Ahlström (FluBBaOfWard)**.
+- Fusion Edition maintenance: **Blueteemo**.
+- UI font: **Fusion Pixel**, with [font sources, credits and licenses](https://github.com/Blueteemo/NGPDS/tree/a3b33264382e5056ab8b997d76957dd1607d0ec8/third_party/fusion-pixel-12px/).
+
+Original copyright and dependency notices remain with the code. The [original user guide](Docs/UPSTREAM_README.md) retains the upstream credits. Commercial ROMs, BIOS images and personal saves are supplied by the user.
 
 ```text
 Huge thanks to Loopy for the incredible PocketNES, without it this emu would
@@ -67,11 +69,3 @@ Thanks to:
 Flavor & Koyote for NGP info.
 Dwedit for help and inspiration with a lot of things.
 ```
-
-Fredrik Ahlström
-
-<https://bsky.app/profile/therealflubba.bsky.social>
-
-<https://www.github.com/FluBBaOfWard>
-
-X/Twitter @TheRealFluBBa

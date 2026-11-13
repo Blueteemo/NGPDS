@@ -1,57 +1,56 @@
-# NGPDS — Blueteemo 维护分支
+# NGPDS — Fusion Edition
 
-[English](README.md)
+[English](README.md) · **简体中文** · [日本語](README.ja.md)
 
-NGPDS 是由 **Fredrik Ahlström（FluBBaOfWard）** 开发、运行于 Nintendo DS 系列设备的 Neo Geo Pocket / Neo Geo Pocket Color 模拟器。本仓库是非官方 Fork，用于保存和整理《秋之回忆 Pure》《无限轮回：Cure.》测试过程中形成的兼容性、渲染性能及存档可靠性改进。
+**[下载 v0.2.3 源码与依赖（ZIP）](https://github.com/Blueteemo/NGPDS/raw/d5389c337dc0f4e93cac3e75bf18e2be0ffd602b/NGPDS_Fusion_v0.2.3_Source.zip)** · [SHA-256 校验值](https://github.com/Blueteemo/NGPDS/blob/d5389c337dc0f4e93cac3e75bf18e2be0ffd602b/SHA256SUMS.txt)
 
-[原项目](https://github.com/FluBBaOfWard/NGPDS) · [保留的上游使用与菜单说明（英文）](Docs/UPSTREAM_README.md)
+ZIP 包含 v0.2.3 的源码和构建依赖。当前分支的程序源码仍是较早的联合修复版。
 
-## 选择分支
+NGPDS 是 **Fredrik Ahlström（FluBBaOfWard）** 开发的 Neo Geo Pocket／Neo Geo Pocket Color 模拟器，运行于 Nintendo DS 系列设备。Fusion Edition 是千岚之夏维护的非官方分支。
 
-| 分支 | 内容 |
-| --- | --- |
-| [`personal/combined-stable`](https://github.com/Blueteemo/NGPDS/tree/personal/combined-stable) | 已验收的联合维护源码，包含 Pure/Cure 图形、性能、Flash 存档及配置改进；本轮更新文档。 |
-| `main` | 上游程序基线加 Fork 文档，**不包含联合修复**。 |
-| [`fix/raster-graphics-performance`](https://github.com/Blueteemo/NGPDS/tree/fix/raster-graphics-performance) | 图形与性能独立提案，对应 [PR #15](https://github.com/FluBBaOfWard/NGPDS/pull/15)。 |
-| [`fix/flash-autosave-persistence`](https://github.com/Blueteemo/NGPDS/tree/fix/flash-autosave-persistence) | 存档与配置独立提案，对应 [PR #14](https://github.com/FluBBaOfWard/NGPDS/pull/14)。 |
+v0.2.3 定稿在「关于」中显示 `V0.2.3 2026-11-13`。
 
-联合分支保留验收提交 `8b9a49b2ebb1f37d9e49a835c5f833ca41ec58f2` 和固定依赖。后续独立滚动边界实验、精简存档候选均未混入。两份上游 PR 尚未合并。本轮只公开既有联合源码并更新文档，没有发布新的模拟器二进制 Release。
+[原项目](https://github.com/FluBBaOfWard/NGPDS) · [原版使用说明](Docs/UPSTREAM_README.md) · [早期联合修复分支](https://github.com/Blueteemo/NGPDS/tree/1c55ee4115e84cd40bd5ffc51c447814a3367aa2)
 
-## 联合分支改进
+## 主要改进
 
-- **《秋之回忆 Pure》**：改善已测人物转场、背景逐行滚动及资料页文字；缓存精灵输入、跳过重复合成与上传，降低渲染开销。
-- **《无限轮回：Cure.》**：修正已测正式剧情的正文缺失，保留已验证的 CG、背景及图层行为。
-- **Flash 与设置**：增加自动保存选项、配置持久化、替换前校验和恢复副本，避免重复写入相同 Flash 内容；兼容已测试的旧 `.fla`、`.sta`、`settings.cfg`，包括合法的 8 字节空 Flash 记录。
+- **图形兼容性**。《秋之回忆 Pure》改善了已测试的人物转场、背景逐行滚动和资料页文字。《无限轮回：Cure.》修正了已测试剧情中的正文缺失。渲染按扫描线状态工作，并通过缓存减少重复的精灵处理。 [图形说明](Docs/raster.md)
+- **Flash 存档与设置**。支持自动保存、写入校验和备份恢复，相同内容不重复写盘。已测试的旧档包括合法的 8 字节空 Flash 存档。 [存档说明](Docs/persistence.md)
+- **三语菜单**。英文、简体中文和日文共用 12 像素 Fusion Pixel 界面。触控操作、底栏提示和实体按键会随菜单模式切换。
+- **外框与色彩**。遮罩可选石墨、经典或关闭。饱和度可选原色、微鲜艳（+15%）和鲜艳（+20%），原有亮度校正仍可独立调整。 [外框素材说明](https://github.com/Blueteemo/NGPDS/blob/a3b33264382e5056ab8b997d76957dd1607d0ec8/Docs/GRAPHITE_BORDER.md)
+- **音频**。「选项 → 通用 → 音频模式」提供标准（默认）和经典（旧版混音）。启动时使用短暂渐入，此前在 NDSi＋R4 实机上确认爆音已消失。 [启动音频说明](https://github.com/Blueteemo/NGPDS/blob/a3b33264382e5056ab8b997d76957dd1607d0ec8/Docs/STARTUP_AUDIO.md)
 
-图形修改处理通用扫描线和寄存器行为，不按游戏 ID、固定帧号或截图硬编码，也不通过改变声音合成或时钟掩盖性能问题。精灵合成器本身不新增 DMA 通道或 HBlank CPU 中断；背景底色逐行回放使用 DMA1，调色板使用 DMA2/DMA3、接续既有 VBlank 传输，DMA0 保留滚动路径。
+## 安装和操作
 
-联合分支的新配置默认开启 Flash 和设置自动保存；旧配置中明确的开关选择继续保留。**升级程序不会把已有 Off 强制改成 On。** 若 Flash 自动保存关闭，离开前应执行 **File → Save Flash**，将游戏内进度写入卡中。
+1. 按下方步骤构建 `NGPDS.nds`，放入烧录卡。部分烧录卡需要打 DLDI 补丁。
+2. 升级时保留 `ngpds/` 或 `data/ngpds/`，它们用于存放存档和设置。替换程序前先备份。
+3. ROM 需自备。内置 HLE BIOS 可运行受支持的游戏并处理受支持的 Flash 存档。使用自备 BIOS 时，在「选项 → 主机」中选择。
+4. 触摸下屏或同时按 **L+R** 打开菜单。在「选项 → 通用 → 界面语言」切换语言。
 
-## 验证范围与限制
+### 菜单和屏幕
 
-联合基线完成自动化模拟检查、存档故障注入、配置测试及音频对照。测试集中在日文版和当时使用的汉化 ROM；不同汉化补丁、ROM 扩容版本、其他游戏及未测场景不能直接沿用结论。
+默认用实体键或触控操作菜单。「打开菜单时暂停」决定游戏是否在菜单背后继续运行。关闭暂停后才显示「菜单中控制游戏」，这一项默认关闭。打开后，实体键操作已载入的游戏，菜单用触控操作。多页菜单可点右下角「下一页」。没有载入 ROM 时，菜单和文件列表可以用实体键操作。
 
-较早的优化 C 版曾由用户在 NDSi＋R4、普通 DS/NTR 模式下确认体验改善。这是历史反馈，**不代表最终联合程序及后续存档修改获得新一轮实机通过**。文件保护不保证任意 SD 卡故障或突然断电后均可恢复；参考核心匹配不等于真实硬件证明，也不宣称全面兼容或时序完全准确。
+「菜单外熄灭副屏」「打开菜单时暂停」「下屏显示游戏」是原版已有功能。熄屏选项会在关闭菜单后关掉闲置屏幕。如果游戏显示在下屏，熄灭的是上屏。
 
-联合分支的实现说明：[图形](https://github.com/Blueteemo/NGPDS/blob/personal/combined-stable/Docs/raster.md)、[存档](https://github.com/Blueteemo/NGPDS/blob/personal/combined-stable/Docs/persistence.md)。
+### 存档
 
-## 构建与使用
+新配置默认开启「自动保存游戏存档」和「自动保存设置」。升级时保留旧配置中的选择。关闭自动保存时，可在「文件」菜单手动保存游戏存档或设置。即时存档与游戏内 Flash 存档是两套功能。
 
-```sh
-git clone --recursive --branch personal/combined-stable https://github.com/Blueteemo/NGPDS.git
-cd NGPDS
-# 先配置已有 Wonderful / BlocksDS 环境。
-make -j8 COMPDB=0
-```
+## 从源码构建
 
-验收构建使用 Wonderful arm-none-eabi GCC 16.2.0、BlocksDS 1.24.0；`COMPDB=0` 仅关闭编译数据库合并，不改变代码生成。复现该基线时保留依赖固定版本。
+v0.2.3 源码归档包含主仓库和七个固定版本的依赖。归档中的 `rebuild.sh` 可离线检出、构建并校验 `NGPDS.nds`。验证使用 Wonderful arm-none-eabi GCC 16.2.0 和 BlocksDS 1.24.0。 [构建命令](README.md#build)
 
-将 `NGPDS.nds` 放入卡中，保留 `ngpds/` 数据目录，自备游戏和所需 BIOS。替换程序前备份存档与配置。菜单操作、BIOS 选择和原版 DS/DS Lite 内存限制见[上游原说明](Docs/UPSTREAM_README.md)；其中的游戏问题列表标记的是**上游基线**，不应视为维护分支的测试结论。联合分支另有 **Autosave Flash** 设置。
+## 验证范围
 
-## 原创诊断与署名
+此前已在 NDSi＋R4 上验证菜单和启动爆音修复。自动化测试覆盖 Pure 和 Cure 日文版及汉化版的选定场景、菜单按键、旧存档和模拟写入故障。在 melonDS 上，Cure 日文版使用内置 HLE BIOS 完成了游戏内存档、冷启动和继续游戏。结论限于所测游戏和存档路径。真实 SD 卡突然断电后的恢复及鼓点还原度仍待验证。v0.2.3 定稿已从干净检出重建，校验值与 R4 安装记录一致。
 
-[ngpc-scroll-tests](https://github.com/Blueteemo/ngpc-scroll-tests) 单独提供原创诊断 ROM、源码、构建方法与参考观察。该诊断项目采用 MIT，不代表 NGPDS 本体采用 MIT；后续最小 K2GE 实验未并入本联合基线。
+[菜单实现与验证记录](https://github.com/Blueteemo/NGPDS/blob/a3b33264382e5056ab8b997d76957dd1607d0ec8/Docs/TRILINGUAL_MENU.md) · [原创滚动诊断 ROM](https://github.com/Blueteemo/ngpc-scroll-tests)
 
-NGPDS 原作者署名、完整 Credits 和版权声明保留在英文主页及上游原文，各依赖声明保留在对应源码中。本 Fork 不代表原作者认可，也不为上游代码重新指定许可证。不提供商业游戏 ROM、BIOS、私人存档或版权游戏截图。
+## 署名
 
-原作者：**Fredrik Ahlström（FluBBaOfWard）**。完整致谢见 [Credits](README.md#credits)。
+- 原作者为 **Fredrik Ahlström（FluBBaOfWard）**。
+- 分支维护为 **千岚之夏**。
+- 界面使用 **Fusion Pixel**，其字体源码、署名与许可证随仓库保留。 [字体说明](https://github.com/Blueteemo/NGPDS/tree/a3b33264382e5056ab8b997d76957dd1607d0ec8/third_party/fusion-pixel-12px/)
+
+原作者和各依赖的版权及许可声明保留在源码中。ROM、BIOS 和个人存档由使用者自行提供。 [原版致谢](Docs/UPSTREAM_README.md) · [Credits](README.md#credits)
